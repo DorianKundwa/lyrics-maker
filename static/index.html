@@ -574,9 +574,12 @@
 
   <!-- Progress -->
   <div class="progress-panel" id="progressPanel">
-    <div class="progress-title">
-      <div class="spinner" id="spinner"></div>
-      <span id="progressTitle">Processing…</span>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="progress-title">
+        <div class="spinner" id="spinner"></div>
+        <span id="progressTitle">Processing…</span>
+      </div>
+      <button type="button" id="btnCancel" class="btn-cancel" style="background:#ff3c64; color:#fff; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600; font-family:inherit; display:none;">Stop Process</button>
     </div>
     <div class="progress-bar-track">
       <div class="progress-bar-fill" id="progressBar"></div>
@@ -629,6 +632,7 @@ document.querySelectorAll('.drop-zone').forEach(zone => {
 // ── Form submit ────────────────────────────────────────────────────────────
 const form       = document.getElementById('mainForm');
 const btnProcess = document.getElementById('btnProcess');
+const btnCancel  = document.getElementById('btnCancel');
 const progressPanel = document.getElementById('progressPanel');
 const progressBar   = document.getElementById('progressBar');
 const progressStep  = document.getElementById('progressStep');
@@ -637,6 +641,22 @@ const spinner       = document.getElementById('spinner');
 const errorBanner   = document.getElementById('errorBanner');
 const resultsPanel  = document.getElementById('resultsPanel');
 const resultsGrid   = document.getElementById('resultsGrid');
+
+let currentJobId = null;
+let pollActive = false;
+
+btnCancel.addEventListener('click', async () => {
+  if (!currentJobId) return;
+  pollActive = false; // Stop polling
+  try {
+    await fetch(`/api/jobs/${currentJobId}`, { method: 'DELETE' });
+  } catch (e) {}
+  
+  showError('Job cancelled by user.');
+  progressPanel.classList.remove('visible');
+  btnCancel.style.display = 'none';
+  currentJobId = null;
+});
 
 function toggleLyricsMode() {
   const mode = document.querySelector('input[name="lyrics_mode"]:checked').value;
@@ -687,15 +707,22 @@ form.addEventListener('submit', async e => {
     const res = await fetch('/api/process', { method: 'POST', body: fd });
     const { job_id, error } = await res.json();
     if (error || !job_id) throw new Error(error || 'Unknown error');
+    
+    currentJobId = job_id;
+    pollActive = true;
+    btnCancel.style.display = 'block';
+    
     await pollStatus(job_id);
   } catch (err) {
     showError(err.message);
+    btnCancel.style.display = 'none';
   }
 });
 
 async function pollStatus(jobId) {
-  while (true) {
+  while (pollActive) {
     await sleep(1500);
+    if (!pollActive) break;
     const res = await fetch(`/api/status/${jobId}`);
     const data = await res.json();
 
@@ -704,12 +731,15 @@ async function pollStatus(jobId) {
       return;
     }
     if (data.status === 'complete') {
+      pollActive = false;
       setProgress(100, 'Done!');
       spinner.style.display = 'none';
       progressTitle.textContent = '✅ Processing complete';
       showResults(jobId, data.files);
       btnProcess.disabled = false;
       btnProcess.textContent = '⚡ Generate Again';
+      btnCancel.style.display = 'none';
+      currentJobId = null;
       return;
     }
     setProgress(data.progress || 0, data.step || 'Working…');

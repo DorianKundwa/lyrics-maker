@@ -162,17 +162,24 @@ async def _run_job(
     def run(fn, *args, **kwargs):
         return loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
+    def check_cancelled():
+        if _jobs.get(job_id, {}).get("status") == "cancelled":
+            raise InterruptedError("Job cancelled by user")
+
     try:
+        check_cancelled()
         # 1 — Thumbnail
         _set(job_id, step="Generating YouTube thumbnail…", progress=5)
         thumb_path = out_dir / "thumbnail.jpg"
         await run(proc.generate_thumbnail, bg_path, thumb_path, title, artist, (1280, 720), font_name)
 
+        check_cancelled()
         # 1.5 — Stem Separation
         _set(job_id, step="Separating stems (this may take a few minutes)…", progress=15)
         from stem_separator import separate_audio
         vocals_path, inst_audio_path = await run(separate_audio, audio_path, stem_engine, str(out_dir))
 
+        check_cancelled()
         # 2 — Instrumental video
         _set(job_id, step="Rendering instrumental video…", progress=35)
         inst_path = out_dir / "instrumental.mp4"
@@ -181,6 +188,7 @@ async def _run_job(
             bg_path, inst_audio_path, inst_path, outro_path, title, artist,
         )
 
+        check_cancelled()
         # 3 — Lyrics video
         _set(job_id, step="Rendering lyrics video…", progress=65)
         lv_path = out_dir / "lyrics_video.mp4"
@@ -209,6 +217,8 @@ async def _run_job(
                 except Exception:
                     pass
 
+    except InterruptedError:
+        job.update(status="error", step="Cancelled", error="Job was cancelled by the user.")
     except Exception as exc:
         import traceback
         traceback.print_exc()
@@ -223,6 +233,12 @@ async def _run_job(
 @app.get("/api/jobs")
 def get_jobs():
     return _jobs
+
+@app.delete("/api/jobs/{job_id}")
+def cancel_job(job_id: str):
+    if job_id in _jobs:
+        _jobs[job_id]["status"] = "cancelled"
+    return {"success": True}
 
 
 @app.get("/api/status/{job_id}")
