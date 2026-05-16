@@ -617,16 +617,20 @@ def align(
     try:
         import whisperx
         import torch
+        import inspect
+        import functools
+
+        # --- FIX: PyTorch 2.6+ & SpeechBrain Compatibility ---
+        # 1. Globally disable weights_only=True to allow Pyannote VAD to load properly
+        _old_load = torch.load
+        _new_load = lambda *a, **kw: _old_load(*a, **{**kw, 'weights_only': False})
+        torch.load = _new_load
+        torch.serialization.load = _new_load
         
-        # Workaround for PyTorch 2.6+ blocking Pyannote VAD unpickling
-        try:
-            import omegaconf
-            torch.serialization.add_safe_globals([
-                omegaconf.dictconfig.DictConfig,
-                omegaconf.listconfig.ListConfig,
-            ])
-        except Exception:
-            pass
+        # 2. Mock inspect.stack() during model load to prevent SpeechBrain from crashing
+        # due to its importutils lazy-loading bug being triggered by pytorch_lightning's is_scripting check.
+        _orig_stack = inspect.stack
+        inspect.stack = lambda *a, **kw: []
 
         device       = "cuda" if torch.cuda.is_available() else "cpu"
         compute_type = "float16" if device == "cuda" else "int8"
@@ -634,6 +638,11 @@ def align(
 
         print("[whisperx] Loading ASR model (base)...")
         model = whisperx.load_model("base", device=device, compute_type=compute_type)
+        
+        # Restore normal inspect.stack() functionality
+        inspect.stack = _orig_stack
+        # -----------------------------------------------------
+
         audio = whisperx.load_audio(wav_path)
 
         try:
