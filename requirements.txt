@@ -8,3 +8,6 @@ jellyfish>=1.0.3
 scipy>=1.12.0
 aeneas>=1.7.3.0
 openai-whisper>=20231117
+
+click==7.1.2
+typer==0.3.2
