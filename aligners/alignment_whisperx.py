@@ -617,6 +617,16 @@ def align(
     try:
         import whisperx
         import torch
+        
+        # Workaround for PyTorch 2.6+ blocking Pyannote VAD unpickling
+        try:
+            import omegaconf
+            torch.serialization.add_safe_globals([
+                omegaconf.dictconfig.DictConfig,
+                omegaconf.listconfig.ListConfig,
+            ])
+        except Exception:
+            pass
 
         device       = "cuda" if torch.cuda.is_available() else "cpu"
         compute_type = "float16" if device == "cuda" else "int8"
