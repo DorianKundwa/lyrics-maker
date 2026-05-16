@@ -38,24 +38,6 @@ def separate_audio(audio_path: str, engine: str, out_dir: str) -> tuple[str, str
             else:
                 print("Demucs output not found, falling back...")
 
-        elif engine == "spleeter":
-            print(f"Running Spleeter on {audio_path}...")
-            # spleeter outputs to out_dir / base_name / {vocals.wav, accompaniment.wav}
-            cmd = ["spleeter", "separate", "-p", "spleeter:2stems", "-o", out_dir, audio_path]
-            subprocess.run(cmd, check=True, capture_output=True)
-            
-            spleeter_dir = os.path.join(out_dir, base_name)
-            v_path = os.path.join(spleeter_dir, "vocals.wav")
-            i_path = os.path.join(spleeter_dir, "accompaniment.wav")
-            
-            if os.path.exists(v_path) and os.path.exists(i_path):
-                shutil.copy(v_path, vocals_out)
-                shutil.copy(i_path, inst_out)
-                shutil.rmtree(spleeter_dir, ignore_errors=True)
-                return vocals_out, inst_out
-            else:
-                print("Spleeter output not found, falling back...")
-
     except Exception as e:
         print(f"Engine {engine} failed: {e}. Falling back to FFmpeg.")
 

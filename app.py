@@ -98,8 +98,8 @@ async def start_process(
     if out_dir.exists():
         shutil.rmtree(out_dir, ignore_errors=True)
         
-    job_dir.mkdir(parents=True)
-    out_dir.mkdir(parents=True)
+    job_dir.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     try:
         # Save uploads
