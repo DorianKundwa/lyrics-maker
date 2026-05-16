@@ -318,7 +318,7 @@ def _get_ffmpeg_base(bg_path: str | Path) -> list[str]:
 
 _VIDEO_ENCODE = [
     "-c:v", "libx264",
-    "-preset", "fast",
+    "-preset", "ultrafast",
     "-tune", "stillimage",
     "-crf", "23",
     "-c:a", "aac",
