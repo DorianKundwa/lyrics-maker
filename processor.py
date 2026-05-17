@@ -254,8 +254,8 @@ def generate_thumbnail(
 
     # Title (large, bold, centered)
     if title:
-        max_width = size[0] - 100
-        font_size_title = 200
+        max_width = size[0] - 60
+        font_size_title = 280
         font_title = load_font(font_path_bold, font_size_title)
         
         while font_size_title > 40:
@@ -265,17 +265,17 @@ def generate_thumbnail(
             font_size_title -= 10
             font_title = load_font(font_path_bold, font_size_title)
 
-        ty = size[1] // 2 - 40
+        ty = size[1] // 2 - 60
         
         # Drop shadow
-        draw.text((cx + 10, ty + 10), title, font=font_title, fill=(0, 0, 0, 200), anchor="mm")
+        draw.text((cx + 12, ty + 12), title, font=font_title, fill=(0, 0, 0, 200), anchor="mm")
         # Main text with outline
-        draw.text((cx, ty), title, font=font_title, fill=(255, 255, 255, 255), anchor="mm", stroke_width=4, stroke_fill=(0, 0, 0, 255))
+        draw.text((cx, ty), title, font=font_title, fill=(255, 255, 255, 255), anchor="mm", stroke_width=6, stroke_fill=(0, 0, 0, 255))
 
     # Artist name (smaller, below title)
     if artist:
-        max_width = size[0] - 100
-        font_size_artist = 80
+        max_width = size[0] - 80
+        font_size_artist = 120
         font_artist = load_font(font_path_reg, font_size_artist)
         
         while font_size_artist > 30:
@@ -285,12 +285,12 @@ def generate_thumbnail(
             font_size_artist -= 5
             font_artist = load_font(font_path_reg, font_size_artist)
 
-        ay = size[1] // 2 + 100
+        ay = size[1] // 2 + (font_size_title // 2) + 10
         
         # Drop shadow
         draw.text((cx + 6, ay + 6), artist, font=font_artist, fill=(0, 0, 0, 200), anchor="mm")
         # Main text with outline
-        draw.text((cx, ay), artist, font=font_artist, fill=(255, 255, 255, 255), anchor="mm", stroke_width=3, stroke_fill=(0, 0, 0, 255))
+        draw.text((cx, ay), artist, font=font_artist, fill=(255, 255, 255, 255), anchor="mm", stroke_width=4, stroke_fill=(0, 0, 0, 255))
 
     img = img.convert("RGB")
     img.save(str(output_path), "JPEG", quality=95, optimize=True)
