@@ -190,8 +190,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         else:
             line_text = _ass_escape(item.get("text", ""))
 
-        # Apply smooth 150ms fade in and fade out
-        line_text = f"{{\\fad(150,150)}}{line_text}"
+        # Apply smooth 150ms fade in and 300ms fade out
+        line_text = f"{{\\fad(150,300)}}{line_text}"
 
         lines.append(
             f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
