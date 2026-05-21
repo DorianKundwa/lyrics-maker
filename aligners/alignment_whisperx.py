@@ -40,11 +40,11 @@ except Exception:
 # Tuning constants
 # ---------------------------------------------------------------------------
 
-MAX_WORD_GAP_SEC      = 2.0   # Internal word gap larger than this is redistributed
-MAX_FRAGMENT_SEC      = 5.5   # Fragment longer than this is flagged / redistributed
+MAX_WORD_GAP_SEC      = 6.0   # Internal word gap larger than this is redistributed
+MAX_FRAGMENT_SEC      = 15.0  # Fragment longer than this is flagged / redistributed
 MIN_LINE_DUR          = 0.15  # Minimum fragment duration
-TYPICAL_WORD_DUR      = 0.25  # Fallback word duration when interpolating
-INTRO_PUSH_STEP       = 3.0   # Max seconds to push unmatched intro words back
+TYPICAL_WORD_DUR      = 0.35  # Fallback word duration when interpolating
+INTRO_PUSH_STEP       = 5.0   # Max seconds to push unmatched intro words back
 
 COST_MATCH   = 0.0
 COST_PARTIAL = 0.5
@@ -636,8 +636,8 @@ def align(
         compute_type = "float16" if device == "cuda" else "int8"
         print(f"[whisperx] Device: {device}, compute: {compute_type}")
 
-        print("[whisperx] Loading ASR model (base)...")
-        model = whisperx.load_model("base", device=device, compute_type=compute_type)
+        print("[whisperx] Loading ASR model (small)...")
+        model = whisperx.load_model("small", device=device, compute_type=compute_type)
         
         # Restore normal inspect.stack() functionality
         inspect.stack = _orig_stack
@@ -679,7 +679,7 @@ def align(
         with open(output_json, "w", encoding="utf-8") as f:
             json.dump({"fragments": fragments}, f, indent=2, ensure_ascii=False)
 
-        print(f"[whisperx] Done. {len(fragments)} fragments → {output_json}")
+        print(f"[whisperx] Done. {len(fragments)} fragments -> {output_json}")
         return output_json
 
     except Exception as e:

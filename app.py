@@ -170,7 +170,12 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/")
 def index():
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(Path("static/index.html"))
+
+
+@app.get("/editor")
+def editor():
+    return FileResponse(Path("static/editor.html"))
 
 
 # ─── Upload & Process ────────────────────────────────────────────────────────
