@@ -440,6 +440,24 @@ def get_alignment(job_id: str):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+@app.get("/api/alignment_audio/{job_id}")
+def get_alignment_audio(job_id: str):
+    """Serve the full audio (with vocals) for the editor preview."""
+    corrected = ALIGN_DIR / f"{job_id}_alignment_corrected.json"
+    original  = ALIGN_DIR / f"{job_id}_alignment.json"
+    path = corrected if corrected.exists() else original
+    if not path.exists():
+        return JSONResponse({"error": "Alignment not found"}, status_code=404)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        audio_path = Path(data.get("audio_path", ""))
+        if not audio_path.exists():
+            return JSONResponse({"error": "Audio file not found"}, status_code=404)
+        return FileResponse(audio_path, media_type="audio/mpeg")
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 @app.patch("/alignment/{job_id}")
 async def patch_alignment(job_id: str, request: Request):
     """Save editor-corrected segments. Body: {segments: [...]}."""

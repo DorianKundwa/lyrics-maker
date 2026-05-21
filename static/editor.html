@@ -122,7 +122,8 @@
   <div class="col-left">
     <div class="le-title">▶ Preview</div>
     <div class="video-container">
-      <video id="previewVideo" controls></video>
+      <video id="previewVideo" muted controls></video>
+      <audio id="previewAudio"></audio>
       <div id="videoOverlay"></div>
     </div>
     <div style="font-size: 0.85rem; color: var(--muted); text-align: center;">
@@ -170,10 +171,19 @@
       return;
     }
 
-    // Load instrumental video so we can render text over it
+    // Load instrumental video and full audio
     const vid = document.getElementById('previewVideo');
+    const aud = document.getElementById('previewAudio');
     const overlay = document.getElementById('videoOverlay');
     vid.src = `/api/download/${jobId}/instrumental`;
+    aud.src = `/api/alignment_audio/${jobId}`;
+
+    // Slave audio to video
+    vid.addEventListener('play', () => aud.play().catch(e=>{}));
+    vid.addEventListener('pause', () => aud.pause());
+    vid.addEventListener('seeking', () => aud.currentTime = vid.currentTime);
+    vid.addEventListener('seeked', () => aud.currentTime = vid.currentTime);
+    vid.addEventListener('ratechange', () => aud.playbackRate = vid.playbackRate);
 
     // Seek video when selecting a row
     LE.onSelect(i => {
