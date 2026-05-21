@@ -478,8 +478,9 @@ def generate_ass_with_positions(
     font_size: int = 72,
 ) -> str:
     """
-    Build an ASS subtitle string from Lyric Editor segments.
-    Supports per-segment y_offset (pixels from video centre; positive = up).
+    Supports per-segment x_offset and y_offset.
+    y_offset: pixels from video centre; positive = up.
+    x_offset: pixels from video centre; positive = right.
     Uses explicit \\pos() per dialogue line — no karaoke word-tagging.
     """
     header = f"""[Script Info]
@@ -502,11 +503,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     for seg in segments:
         start    = float(seg.get("start", 0))
         end      = float(seg.get("end",   0))
-        text     = _ass_escape(str(seg.get("text", "")))
+        x_offset = int(seg.get("x_offset", 0))
         y_offset = int(seg.get("y_offset", 0))
+        x_pos    = cx + x_offset   # +x_offset → text moves RIGHT
         y_pos    = cy - y_offset   # +y_offset → text moves UP (lower ASS y value)
 
-        line_text = f"{{\\fad(150,300)\\an5\\pos({cx},{y_pos})}}{text}"
+        line_text = f"{{\\fad(150,300)\\an5\\pos({x_pos},{y_pos})}}{text}"
         lines.append(
             f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
             f"Default,,0,0,0,,{line_text}"
@@ -525,7 +527,7 @@ def rerender_lyrics_video(
 ) -> None:
     """
     Re-render a lyrics video from Lyric Editor-corrected segments.
-    Generates a fresh ASS file with per-segment y_offset positioning
+    Generates a fresh ASS file with per-segment x/y positioning
     then calls FFmpeg — no ML alignment step required.
     """
     work_dir = Path(output_path).parent

@@ -35,9 +35,11 @@
 
   // ── State ────────────────────────────────────────────────────────────────────
   let canvas, ctx, container;
-  let viewStart  = 0;
   let pixPerSec  = 80;
   let drag       = null;
+  let isPanning  = false;
+  let panStartX  = 0;
+  let panScrollX = 0;
 
   // ── Public: init ─────────────────────────────────────────────────────────────
 
@@ -65,30 +67,18 @@
 
   function _resize() {
     if (!canvas || !container) return;
-    const w = container.clientWidth;
-    if (!w) { setTimeout(_resize, 60); return; }
-    canvas.width = w;
+    const dur = LE.totalDuration || Math.max(...(LE.segments || []).map(s => s.end), 300);
+    const newW = Math.max(container.clientWidth, dur * pixPerSec);
+    if (canvas.width !== newW) {
+      canvas.width = newW;
+    }
     draw(LE.segments);
   }
 
   // ── Coordinate helpers ───────────────────────────────────────────────────────
 
-  function _viewEnd() {
-    const dur  = LE.totalDuration || 300;
-    const span = (canvas ? canvas.width : 800) / pixPerSec;
-    return Math.min(dur, viewStart + span);
-  }
-
-  function _timeToX(t) {
-    const span = _viewEnd() - viewStart;
-    if (span <= 0) return 0;
-    return ((t - viewStart) / span) * canvas.width;
-  }
-
-  function _xToTime(x) {
-    const span = _viewEnd() - viewStart;
-    return viewStart + (x / canvas.width) * span;
-  }
+  function _timeToX(t) { return t * pixPerSec; }
+  function _xToTime(x) { return x / pixPerSec; }
 
   // ── Draw ─────────────────────────────────────────────────────────────────────
 
@@ -119,15 +109,14 @@
     ctx.fillStyle = '#131722';
     ctx.fillRect(0, 0, W, RULER_H);
 
-    const span = _viewEnd() - viewStart;
-    if (span <= 0) return;
-    const step = _niceStep(span / (W / 80));
+    const dur = LE.totalDuration || Math.max(...(LE.segments || []).map(s => s.end), 300);
+    const step = _niceStep((container.clientWidth || 800) / pixPerSec / 8);
 
     ctx.font = '9px DM Sans, monospace';
     ctx.textAlign = 'center';
 
-    let t = Math.ceil(viewStart / step) * step;
-    while (t <= _viewEnd()) {
+    let t = 0;
+    while (t <= dur) {
       const x = Math.round(_timeToX(t));
       ctx.fillStyle = '#1e2433';
       ctx.fillRect(x, RULER_H - 5, 1, 5);
@@ -255,6 +244,18 @@
   // ── Mouse events ─────────────────────────────────────────────────────────────
 
   function _onDown(e) {
+    // Middle click or shift+click for panning
+    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+      e.preventDefault();
+      isPanning = true;
+      panStartX = e.clientX;
+      panScrollX = container.scrollLeft;
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+
+    if (e.button !== 0) return;
+
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -279,6 +280,12 @@
   }
 
   function _onMove(e) {
+    if (isPanning) {
+      const dx = e.clientX - panStartX;
+      container.scrollLeft = panScrollX - dx;
+      return;
+    }
+
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -321,6 +328,11 @@
   }
 
   function _onUp() {
+    if (isPanning) {
+      isPanning = false;
+      canvas.style.cursor = 'default';
+      return;
+    }
     if (!drag) return;
     canvas.style.cursor = 'default';
     drag = null;
@@ -329,10 +341,26 @@
   }
 
   function _onWheel(e) {
+    // Allow horizontal scrolling normally without zooming
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+
     e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.18 : 0.85;
-    pixPerSec = Math.max(8, Math.min(600, pixPerSec * factor));
-    draw(LE.segments);
+    
+    // Zoom logic
+    const oldPixPerSec = pixPerSec;
+    const factor = e.deltaY < 0 ? 1.15 : 0.85;
+    pixPerSec = Math.max(5, Math.min(800, pixPerSec * factor));
+
+    // Keep the cursor position stable
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const timeAtCursor = x / oldPixPerSec;
+    
+    _resize();
+
+    // Adjust scroll to keep timeAtCursor under the mouse
+    const newX = timeAtCursor * pixPerSec;
+    container.scrollLeft += (newX - x);
   }
 
   function _cursor(type) {

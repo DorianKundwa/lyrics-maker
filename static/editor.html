@@ -33,10 +33,30 @@
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px;
   }
   .video-container {
+    position: relative;
     flex: 1; display: flex; align-items: center; justify-content: center;
     background: #000; border-radius: 8px; overflow: hidden;
   }
   video { max-width: 100%; max-height: 100%; width: 100%; object-fit: contain; }
+
+  /* Interactive overlay layer */
+  #videoOverlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; overflow: hidden;
+  }
+  .overlay-text {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    cursor: move;
+    color: white; font-weight: bold;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    text-align: center; white-space: pre-wrap;
+    padding: 8px; border: 2px dashed transparent;
+    user-select: none;
+  }
+  .overlay-text:hover { border-color: rgba(255,255,255,0.5); }
+  .overlay-text.dragging { border-color: var(--accent2); cursor: grabbing; }
   
   /* Right column: Editor */
   .col-right {
@@ -68,8 +88,8 @@
   .le-status--pending { color: var(--gold); }
 
   /* Timeline */
-  .le-timeline-wrap { width: 100%; background: #0b0e1a; border-bottom: 1px solid var(--border); height: 120px; }
-  .le-timeline-wrap canvas { display: block; width: 100%; height: 100%; }
+  .le-timeline-wrap { width: 100%; background: #0b0e1a; border-bottom: 1px solid var(--border); height: 120px; overflow-x: auto; overflow-y: hidden; position: relative; }
+  .le-timeline-wrap canvas { display: block; }
   .le-timeline-hint { text-align: center; font-size: .7rem; color: var(--muted); padding: 6px; background: var(--surface); border-bottom: 1px solid var(--border); }
 
   /* Table */
@@ -103,9 +123,10 @@
     <div class="le-title">▶ Preview</div>
     <div class="video-container">
       <video id="previewVideo" controls></video>
+      <div id="videoOverlay"></div>
     </div>
     <div style="font-size: 0.85rem; color: var(--muted); text-align: center;">
-      Tip: The video preview uses the <i>original</i> alignment. Changes here won't update the video until you click <b>Re-render</b>.
+      Tip: Drag the text on the video to move it directly. Middle-click timeline to pan.
     </div>
   </div>
 
@@ -149,16 +170,102 @@
       return;
     }
 
-    // Load video
+    // Load instrumental video so we can render text over it
     const vid = document.getElementById('previewVideo');
-    vid.src = `/api/download/${jobId}/lyrics_video`;
+    const overlay = document.getElementById('videoOverlay');
+    vid.src = `/api/download/${jobId}/instrumental`;
 
     // Seek video when selecting a row
     LE.onSelect(i => {
       const seg = LE.segments[i];
       if (seg && !vid.paused) vid.currentTime = seg.start;
       else if (seg) { vid.currentTime = seg.start; vid.play().catch(e=>{}); }
+      renderOverlay();
     });
+
+    // Update overlay continuously during playback
+    vid.addEventListener('timeupdate', renderOverlay);
+    LE.onChange(renderOverlay);
+
+    // Overlay dragging logic
+    let isDragging = false;
+    let dragStartX = 0, dragStartY = 0;
+    let origXOff = 0, origYOff = 0;
+    let activeSegObj = null;
+
+    overlay.addEventListener('mousedown', (e) => {
+      if (!e.target.classList.contains('overlay-text')) return;
+      isDragging = true;
+      activeSegObj = e.target.segRef;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      origXOff = activeSegObj.x_offset || 0;
+      origYOff = activeSegObj.y_offset || 0;
+      e.target.classList.add('dragging');
+      
+      // Auto-select in timeline/table
+      const idx = LE.segments.indexOf(activeSegObj);
+      if (idx !== -1) LE.select(idx);
+      LE.pushUndo();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging || !activeSegObj) return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      
+      // We assume video height ~1080px for ASS generator scale, but DOM might be 500px height.
+      // Easiest is mapping px to px, but we should scale relative to DOM video container height.
+      // Wait, ASS margins are just pixel values on a 1920x1080 canvas.
+      const videoRect = vid.getBoundingClientRect();
+      // Calculate scale factor: 1080 / current DOM height
+      const scale = 1080 / videoRect.height;
+      
+      activeSegObj.x_offset = Math.round(origXOff + (dx * scale));
+      activeSegObj.y_offset = Math.round(origYOff - (dy * scale)); // ASS y_offset is positive=UP
+      
+      LE.notify();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        activeSegObj = null;
+        if (typeof LE_Actions !== 'undefined') LE_Actions.scheduleAutoSave();
+        renderOverlay();
+      }
+    });
+
+    function renderOverlay() {
+      if (isDragging) return; // let mousemove handle DOM update
+      const t = vid.currentTime;
+      const activeSegs = LE.segments.filter(s => t >= s.start && t <= s.end);
+      
+      overlay.innerHTML = '';
+      const videoRect = vid.getBoundingClientRect();
+      const scale = videoRect.height / 1080;
+
+      activeSegs.forEach(seg => {
+        const el = document.createElement('div');
+        el.className = 'overlay-text';
+        el.textContent = seg.text;
+        
+        // Font size approx scaling
+        const fs = (LE.fontSize || 72) * scale;
+        el.style.fontSize = fs + 'px';
+        el.style.fontFamily = LE.fontName || 'Arial';
+        
+        // Position
+        const xOffDOM = (seg.x_offset || 0) * scale;
+        const yOffDOM = (seg.y_offset || 0) * scale;
+        
+        // ASS y_offset > 0 means move UP from center. DOM top 50% translates -50%.
+        el.style.transform = `translate(calc(-50% + ${xOffDOM}px), calc(-50% - ${yOffDOM}px))`;
+        el.segRef = seg;
+        
+        overlay.appendChild(el);
+      });
+    }
 
     // Init editor
     LE_Actions.initEditor(jobId);
