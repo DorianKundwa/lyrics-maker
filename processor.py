@@ -378,6 +378,7 @@ def generate_lyrics_video(
     font_name: str = "Arial",
     font_size: int = 72,
     word_highlight: bool = True,
+    language: str = "en",
 ) -> None:
     """Background image + synced lyrics subtitles + audio."""
     work_dir = Path(output_path).parent
@@ -391,7 +392,7 @@ def generate_lyrics_video(
         print("Un-timed lyrics detected. Running intelligent alignment on vocals...")
         try:
             from aligners import align, parse_alignment_json
-            align_json = align(str(vocals_path), str(lyrics_path))
+            align_json = align(str(vocals_path), str(lyrics_path), language=language)
             timed = parse_alignment_json(align_json)
         except Exception as e:
             print(f"Alignment engine failed: {e}. Falling back to even spacing.")
