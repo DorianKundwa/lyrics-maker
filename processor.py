@@ -467,3 +467,82 @@ def _ass_escape_path(path: str) -> str:
     # The entire path must be wrapped in single quotes to handle spaces correctly.
     p = path.replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
     return f"'{p}'"
+
+
+# ─── Editor Re-render Support ────────────────────────────────────────────────
+
+def generate_ass_with_positions(
+    segments: list,
+    font_name: str = "Arial",
+    font_size: int = 72,
+) -> str:
+    """
+    Build an ASS subtitle string from Lyric Editor segments.
+    Supports per-segment y_offset (pixels from video centre; positive = up).
+    Uses explicit \\pos() per dialogue line — no karaoke word-tagging.
+    """
+    header = f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,{font_name},{font_size},&H00FFFFFF,&H000000FF,&H00000000,&HAA000000,-1,0,0,0,100,100,2,0,1,4,3,5,60,60,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+    cx, cy = 960, 540          # centre of 1920×1080
+    lines = [header]
+
+    for seg in segments:
+        start    = float(seg.get("start", 0))
+        end      = float(seg.get("end",   0))
+        text     = _ass_escape(str(seg.get("text", "")))
+        y_offset = int(seg.get("y_offset", 0))
+        y_pos    = cy - y_offset   # +y_offset → text moves UP (lower ASS y value)
+
+        line_text = f"{{\\fad(150,300)\\an5\\pos({cx},{y_pos})}}{text}"
+        lines.append(
+            f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+            f"Default,,0,0,0,,{line_text}"
+        )
+
+    return "\n".join(lines)
+
+
+def rerender_lyrics_video(
+    bg_path,
+    audio_path,
+    segments: list,
+    output_path,
+    font_name: str = "Arial",
+    font_size: int = 72,
+) -> None:
+    """
+    Re-render a lyrics video from Lyric Editor-corrected segments.
+    Generates a fresh ASS file with per-segment y_offset positioning
+    then calls FFmpeg — no ML alignment step required.
+    """
+    work_dir = Path(output_path).parent
+    work_dir.mkdir(parents=True, exist_ok=True)
+
+    ass_content = generate_ass_with_positions(segments, font_name=font_name, font_size=font_size)
+    ass_path    = work_dir / "_corrected.ass"
+    ass_path.write_text(ass_content, encoding="utf-8")
+
+    ass_escaped      = _ass_escape_path(str(ass_path))
+    base_dir_escaped = _ass_escape_path(str(Path(__file__).parent.resolve()))
+    vf = f"{_VIDEO_SCALE},subtitles={ass_escaped}:fontsdir={base_dir_escaped}"
+
+    cmd = _get_ffmpeg_base(bg_path) + [
+        "-i", str(bg_path),
+        "-i", str(audio_path),
+        "-vf", vf,
+        "-shortest",
+    ] + _VIDEO_ENCODE + [str(output_path)]
+
+    subprocess.run(cmd, check=True, capture_output=True)

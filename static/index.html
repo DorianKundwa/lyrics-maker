@@ -422,6 +422,127 @@
       grid-template-columns: 1fr;
     }
   }
+
+  /* ── Lyric Editor ─────────────────────────────────────────────────────── */
+  .editor-panel {
+    margin-top: 40px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: fadeUp .5s ease both;
+  }
+  .le-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .le-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: .98rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .le-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .le-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .18s, opacity .18s, box-shadow .18s;
+    white-space: nowrap;
+  }
+  .le-btn:hover:not(:disabled) { background: var(--border); }
+  .le-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .le-btn--primary { border-color: var(--accent2); color: var(--accent2); }
+  .le-btn--primary:hover:not(:disabled) { background: #7c3aed22; }
+  .le-btn--accent {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border: none; color: #fff;
+    box-shadow: 0 2px 14px #ff3c6430;
+  }
+  .le-btn--accent:hover:not(:disabled) { opacity: .88; box-shadow: 0 4px 22px #ff3c6448; }
+  .le-status { font-size: .76rem; color: var(--muted); min-width: 84px; }
+  .le-status--ok      { color: var(--success); }
+  .le-status--err     { color: var(--accent); }
+  .le-status--pending { color: var(--gold); }
+
+  /* Timeline */
+  .le-timeline-wrap { width: 100%; overflow: hidden; background: #0b0e1a;
+    border-bottom: 1px solid var(--border); }
+  .le-timeline-wrap canvas { display: block; }
+  .le-timeline-hint {
+    text-align: center;
+    font-size: .68rem;
+    color: var(--muted);
+    padding: 5px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: .3px;
+  }
+
+  /* Table */
+  .le-table-wrap { overflow-x: auto; max-height: 260px; overflow-y: auto; }
+  .le-table { width: 100%; border-collapse: collapse; font-size: .83rem; min-width: 540px; }
+  .le-th {
+    background: var(--surface);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: .72rem;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    text-align: left;
+    position: sticky; top: 0; z-index: 2;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .le-th-text { width: 44%; }
+  .le-td { padding: 8px 12px; border-bottom: 1px solid #1e243322; vertical-align: middle; white-space: nowrap; }
+  .le-text { white-space: normal; max-width: 240px; word-break: break-word; }
+  .le-row { cursor: default; transition: background .12s; }
+  .le-row:hover   { background: #13172260; }
+  .le-row--sel    { background: #7c3aed18; }
+  .le-row--sel td { border-left: 2px solid var(--accent2); }
+  .le-idx  { color: var(--muted); width: 28px; text-align: center; }
+  .le-time { color: var(--gold); font-family: monospace; font-size: .79rem; cursor: pointer; }
+  .le-time:hover { color: #fcd34d; }
+  .le-dur  { color: var(--muted); font-size: .77rem; }
+  .le-yoff { color: var(--accent2); font-family: monospace; }
+  .le-inline-input {
+    background: var(--bg); border: 1px solid var(--accent2);
+    color: var(--text); border-radius: 5px; padding: 4px 8px;
+    font-family: 'DM Sans', sans-serif; font-size: .82rem;
+    width: 100%; outline: none; min-width: 72px;
+  }
+  .le-inline-ta { resize: vertical; min-height: 42px; }
+  .le-empty { color: var(--muted); text-align: center; padding: 22px; font-size: .9rem; }
+
+  /* Re-render panel */
+  .le-rerender-panel { padding: 18px 22px; border-top: 1px solid var(--border); background: var(--surface); }
+  .le-rerender-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .93rem; margin-bottom: 12px; }
+  .le-progress-track { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+  .le-progress-fill  { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width .4s ease; }
+  .le-rerender-step  { font-size: .83rem; color: var(--muted); }
+  .le-hint           { font-size: .73rem; color: var(--muted); margin-top: 6px; }
+
 </style>
 </head>
 <body>
@@ -594,6 +715,48 @@
     <div class="results-title">✅ &nbsp;All files ready</div>
     <div class="results-grid" id="resultsGrid"></div>
   </div>
+
+  <!-- ── Lyric Editor ─────────────────────────────────────────────────── -->
+  <div id="editorPanel" class="editor-panel" style="display:none">
+
+    <!-- Toolbar -->
+    <div class="le-header">
+      <div class="le-title">✏️ Lyric Editor <span class="optional-pill">beta</span></div>
+      <div class="le-toolbar">
+        <button id="leUndo"     class="le-btn" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
+        <button id="leRedo"     class="le-btn" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
+        <button id="leReset"    class="le-btn" title="Reset to original">🔄 Reset</button>
+        <span   id="leAutoSaveStatus" class="le-status"></span>
+        <button id="leSave"     class="le-btn le-btn--primary" title="Save (Ctrl+S)">💾 Save</button>
+        <button id="leRerender" class="le-btn le-btn--accent">🎬 Re-render</button>
+      </div>
+    </div>
+
+    <!-- Canvas timeline -->
+    <div id="leTimelineWrap" class="le-timeline-wrap">
+      <canvas id="leTimeline"></canvas>
+    </div>
+    <div class="le-timeline-hint">
+      Drag segment to move &nbsp;·&nbsp; Drag edges to resize &nbsp;·&nbsp;
+      Drag <strong>↕</strong> handle for vertical position &nbsp;·&nbsp; Scroll to zoom
+    </div>
+
+    <!-- Editable table -->
+    <div id="leTable"></div>
+
+    <!-- Re-render progress -->
+    <div id="leRerenderPanel" class="le-rerender-panel" style="display:none">
+      <div class="le-rerender-title">🎬 Re-rendering corrected video…</div>
+      <div class="le-progress-track">
+        <div id="leRerenderBar" class="le-progress-fill" style="width:0%"></div>
+      </div>
+      <div id="leRerenderStep" class="le-rerender-step">Starting…</div>
+      <a id="leRerenderDl" class="btn-dl" href="#" download="lyrics_video_corrected.mp4"
+         style="display:none; margin-top:14px;">⬇ Download Corrected Video</a>
+      <p class="le-hint">Note: corrected video uses line-level sync (no karaoke word-highlighting).</p>
+    </div>
+
+  </div><!-- /editorPanel -->
 
 </div>
 
@@ -781,6 +944,9 @@ function showResults(jobId, fileKeys) {
         </a>
       </div>`;
   }).join('');
+
+  // Launch Lyric Editor
+  if (typeof LE_Actions !== 'undefined') LE_Actions.initEditor(jobId);
 }
 
 function showError(msg) {
@@ -794,5 +960,9 @@ function showError(msg) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
+<script src="/static/lyric_editor.js"></script>
+<script src="/static/lyric_editor_table.js"></script>
+<script src="/static/lyric_editor_timeline.js"></script>
+<script src="/static/lyric_editor_actions.js"></script>
 </body>
 </html>
