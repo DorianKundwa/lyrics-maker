@@ -508,7 +508,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         x_pos    = cx + x_offset   # +x_offset → text moves RIGHT
         y_pos    = cy - y_offset   # +y_offset → text moves UP (lower ASS y value)
 
-        line_text = f"{{\\fad(150,300)\\an5\\pos({x_pos},{y_pos})}}{text}"
+        seg_text  = _ass_escape(seg.get("text", ""))
+        line_text = f"{{\\fad(150,300)\\an5\\pos({x_pos},{y_pos})}}{seg_text}"
         lines.append(
             f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
             f"Default,,0,0,0,,{line_text}"
