@@ -41,7 +41,7 @@ def get_media_duration(path: str | Path) -> float:
     """Return duration of audio/video file in seconds."""
     result = subprocess.run(
         ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", str(path)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, check=True, encoding="utf-8", errors="replace"
     )
     data = json.loads(result.stdout)
     return float(data["format"]["duration"])
