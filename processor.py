@@ -475,9 +475,11 @@ def _ffmpeg_escape(text: str) -> str:
 
 
 def _ffmpeg_escape_path(path: str) -> str:
-    """Escape a file path for use in an ffmpeg filter option value.
-    Converts backslashes to forward slashes and escapes colons (Windows drive letters)."""
-    return path.replace("\\", "/").replace(":", "\\:")
+    """Escape a file path for use in an ffmpeg filter option value (e.g. drawtext fontfile/textfile).
+    Converts backslashes to forward slashes, escapes colons (Windows drive letters),
+    and wraps the whole path in single quotes to handle spaces in directory names."""
+    p = path.replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
+    return f"'{p}'"
 
 
 def _ass_escape_path(path: str) -> str:
