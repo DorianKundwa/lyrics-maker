@@ -1,0 +1,239 @@
+{
+  "job_id": "breathe._Yesterday_",
+  "segments": [
+    {
+      "index": 0,
+      "start": 25.81,
+      "end": 29.362,
+      "text": "If I knew yesterday",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 32.476,
+      "end": 36.04,
+      "text": "That dreams could fall away",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 38,
+      "end": 41.77,
+      "text": "Then I'd go back there",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 45.78,
+      "end": 47.11,
+      "text": "And tell myself to stay",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 50.98,
+      "end": 53.156,
+      "text": "If I knew yesterday",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 56.792,
+      "end": 58.896,
+      "text": "That dreams could fall away",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 62.84,
+      "end": 69.774,
+      "text": "Then I'd go back there",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 69.99,
+      "end": 71.396,
+      "text": "And tell myself to stay",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 85.41,
+      "end": 91.06,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 94.19,
+      "end": 97.337,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 97.456,
+      "end": 103.83,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 104.86,
+      "end": 108.8,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 109.85,
+      "end": 114.53999999999999,
+      "text": "If I knew yesterday",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 116.599,
+      "end": 119.99000000000001,
+      "text": "That dreams could fall away",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 121.93,
+      "end": 126.6,
+      "text": "Then I'd go back there in",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 128.16,
+      "end": 130.609,
+      "text": "And tell myself to stay",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 133.53,
+      "end": 136.927,
+      "text": "If I knew yesterday",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 140,
+      "end": 143.758,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 145.81,
+      "end": 150.44,
+      "text": "If I knew yesterday",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 151.54,
+      "end": 155.9,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 159.59,
+      "end": 160.657,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 166.564,
+      "end": 169.269,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 169.449,
+      "end": 172.733,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 176,
+      "end": 179.126,
+      "text": "You've been on my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 181.49,
+      "end": 184.872,
+      "text": "If I knew better",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 188.12,
+      "end": 190.098,
+      "text": "I would have tried more",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 191.281,
+      "end": 197.109,
+      "text": "And you'd be happy",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 200.312,
+      "end": 202.955,
+      "text": "And I'd just take the fall",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 220.68,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\breathe._Yesterday_\\audio.mp3",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\breathe._Yesterday_\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\breathe._Yesterday_",
+  "title": "Yesterday ",
+  "artist": "breathe."
+}

@@ -1,0 +1,527 @@
+{
+  "job_id": "Yung_Miami_Spend_Dat",
+  "segments": [
+    {
+      "index": 0,
+      "start": 1.06,
+      "end": 2.144,
+      "text": "J. White, turn me up",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 2.193,
+      "end": 3.488,
+      "text": "Uh, Miami",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 6.341,
+      "end": 8.589,
+      "text": "This for all my scammers and my get-money bitches",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 9.682,
+      "end": 14.429,
+      "text": "Where all my scammin'-ass niggas at? (Where they at?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 14.531,
+      "end": 16.303,
+      "text": "Spendin' that money fast (Spend it)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 18.077,
+      "end": 18.777,
+      "text": "Twenties, fifties, hundreds, cash (Cash)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 19.099,
+      "end": 21.012,
+      "text": "Boy, go in that Goyard bag",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 21.422,
+      "end": 24.649,
+      "text": "Boostin' bitches, where y'all at? (Where y'all at?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 24.669,
+      "end": 26.652,
+      "text": "Stuffin' that shit in y'all bag",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 26.733,
+      "end": 29.417,
+      "text": "Just to flip it, pop some tags (Hustlers)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 29.797,
+      "end": 31.69,
+      "text": "Girl, go in that Goyard bag",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 32.423,
+      "end": 34.905,
+      "text": "Spend that shit, spend that shit (Yeah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 35.046,
+      "end": 37.308,
+      "text": "Spend that shit (Uh), spend that shit (Ow)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 37.319,
+      "end": 40.552,
+      "text": "Nigga, spend that shit (Spend it), spend that shit (Spend that shit)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 40.563,
+      "end": 42.375,
+      "text": "Spend that shit (Spend that shit), nigga, spend that shit, uh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 42.386,
+      "end": 45.299,
+      "text": "I like a gangster-ass nigga makin' more than ten figures (Y\u0435ah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 45.31,
+      "end": 47.552,
+      "text": "I'm a down-ass bitch, ridin' with you in the splatt",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 47.844,
+      "end": 50.307,
+      "text": "Only fuck with the hitters, for his girl, h\u0435 a tricker",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 50.448,
+      "end": 54.002,
+      "text": "Callin' up his trap phone, pussy nigga, where you at? (Where you at?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 54.012,
+      "end": 56.045,
+      "text": "Show me where you spin the block on your opps (On your opps)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 56.795,
+      "end": 58.966,
+      "text": "Hangin' out the drop, screamin', \"Fuck the cops\" (Fuck 12)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 58.976,
+      "end": 61.418,
+      "text": "What we doin', nigga? Show me where your hood at (Where your hood at)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 61.74,
+      "end": 63.881,
+      "text": "What's your face card? Nigga, where you good at? (Woah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 63.89,
+      "end": 66.634,
+      "text": "Where all my scammin'-ass niggas at? (Where they at?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 67.885,
+      "end": 69.736,
+      "text": "Spendin' that money fast (Spend it)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 71.888,
+      "end": 72.629,
+      "text": "Twenties, fifties, hundreds, cash (Cash)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 72.649,
+      "end": 73.879,
+      "text": "Boy, go in that Goyard bag",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 74.751,
+      "end": 78.013,
+      "text": "Boostin' bitches, where y'all at? (Where y'all at?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 28,
+      "start": 78.034,
+      "end": 80.036,
+      "text": "Stuffin' that shit in y'all bag",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 29,
+      "start": 80.055,
+      "end": 82.798,
+      "text": "Just to flip it, pop some tags (Hustlers)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 30,
+      "start": 83.117,
+      "end": 84.569,
+      "text": "Girl, go in that Goyard bag",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 31,
+      "start": 85.62,
+      "end": 88.245,
+      "text": "Spend that shit, spend that shit (Yeah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 32,
+      "start": 88.284,
+      "end": 90.308,
+      "text": "Spend that shit (Uh), spend that shit (Ow)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 33,
+      "start": 90.429,
+      "end": 92.852,
+      "text": "Nigga, spend that shit (Spend it), spend that shit (Spend that shit)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 34,
+      "start": 93.634,
+      "end": 96.177,
+      "text": "Spend that shit (Spend that shit), nigga, spend that shit, uh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 35,
+      "start": 96.599,
+      "end": 99.382,
+      "text": "Where all my bitches gettin' money like they niggas? (Where they at?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 36,
+      "start": 99.393,
+      "end": 101.356,
+      "text": "Put it up in case the feds come and get 'em (Yeah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 37,
+      "start": 101.787,
+      "end": 103.7,
+      "text": "Got they own, don't do it for the plot (Uh-uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 38,
+      "start": 104.572,
+      "end": 107.117,
+      "text": "Bad-ass bitch, make a nigga cop and block (Ow)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 39,
+      "start": 107.126,
+      "end": 108.859,
+      "text": "Pussy smooth, make a nigga think he landed",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 40,
+      "start": 110.183,
+      "end": 112.225,
+      "text": "Bossed up, fuck nigga, who you playin' with? (Haha)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 41,
+      "start": 112.466,
+      "end": 114.87,
+      "text": "Right plan, wrong bitch, nothin' average",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 42,
+      "start": 115.111,
+      "end": 128.014,
+      "text": "Bussdown Patek, I ain't never been a plain bitch",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 43,
+      "start": 128.063,
+      "end": 129.014,
+      "text": "Where all my scammin'-ass niggas at? (Where they at?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 44,
+      "start": 129.024,
+      "end": 129.623,
+      "text": "Spendin' that money fast (Spend it)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 45,
+      "start": 129.633,
+      "end": 130.133,
+      "text": "Twenties, fifties, hundreds, cash (Cash)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 46,
+      "start": 130.144,
+      "end": 130.743,
+      "text": "Boy, go in that Goyard bag",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 47,
+      "start": 130.753,
+      "end": 131.554,
+      "text": "Boostin' bitches, where y'all at? (Where y'all at?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 48,
+      "start": 131.563,
+      "end": 133.263,
+      "text": "Stuffin' that shit in y'all bag",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 49,
+      "start": 133.383,
+      "end": 136.087,
+      "text": "Just to flip it, pop some tags (Hustlers)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 50,
+      "start": 136.449,
+      "end": 138.532,
+      "text": "Girl, go in that Goyard bag",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 51,
+      "start": 139.114,
+      "end": 141.598,
+      "text": "Spend that shit, spend that shit (Yeah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 52,
+      "start": 141.778,
+      "end": 144.282,
+      "text": "Spend that shit (Uh), spend that shit (Ow)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 53,
+      "start": 144.423,
+      "end": 146.665,
+      "text": "Nigga, spend that shit (Spend it), spend that shit (Spend that shit)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 54,
+      "start": 147.048,
+      "end": 149.069,
+      "text": "Spend that shit (Spend that shit), nigga, spend that shit, uh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 55,
+      "start": 149.471,
+      "end": 152.314,
+      "text": "This for all my boss bitches and boss niggas all around the world",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 56,
+      "start": 152.695,
+      "end": 154.177,
+      "text": "Gettin' it off the muscle",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 57,
+      "start": 154.198,
+      "end": 156.0,
+      "text": "That's doin' the best they motherfuckin' can",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 58,
+      "start": 156.561,
+      "end": 158.022,
+      "text": "I see y'all, I feel y'all",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 59,
+      "start": 158.383,
+      "end": 160.105,
+      "text": "This for the hood, nigga, 305",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 60,
+      "start": 161.649,
+      "end": 164.793,
+      "text": "Get money or lay the fuck down, yeah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 61,
+      "start": 168.098,
+      "end": 170.441,
+      "text": "Get money or die tryin', bitch",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 62,
+      "start": 171.162,
+      "end": 171.703,
+      "text": "Spend that shit",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 63,
+      "start": 181.42,
+      "end": 232.62,
+      "text": "Thanks for watching!",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 232.593991,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Yung_Miami_Spend_Dat\\audio_combined.m4a",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Yung_Miami_Spend_Dat\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\Yung_Miami_Spend_Dat",
+  "title": "Spend Dat",
+  "artist": "Yung Miami"
+}

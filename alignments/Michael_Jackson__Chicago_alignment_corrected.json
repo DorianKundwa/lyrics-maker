@@ -1,0 +1,631 @@
+{
+  "job_id": "Michael_Jackson__Chicago",
+  "segments": [
+    {
+      "index": 0,
+      "start": 2.947,
+      "end": 6.306,
+      "text": "Ah, I met her on my way to Chicago",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 7.347,
+      "end": 10.192,
+      "text": "Where she was all alone",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 10.212,
+      "end": 14.821,
+      "text": "And so was I, so I asked her for her name",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 15.542,
+      "end": 17.786,
+      "text": "She smiled and looked at me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 17.806,
+      "end": 20.893,
+      "text": "I was surprised to see",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 20.913,
+      "end": 25.4,
+      "text": "That a woman like that was really into me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 25.42,
+      "end": 26.823,
+      "text": "She said she didn't have no man",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 27.364,
+      "end": 29.55,
+      "text": "Raised the kids the very best she can (She was lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 29.85,
+      "end": 32.415,
+      "text": "She told me she was all alone",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 33.216,
+      "end": 35.92,
+      "text": "Said at home, she didn't have no phone (She was wantin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 35.93,
+      "end": 41.244070133731306,
+      "text": "She said just to give her a page",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 41.54441922734322,
+      "end": 43.579796887074586,
+      "text": "Fifty-nine was the code she gave (She was lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 43.83625610698505,
+      "end": 45.704,
+      "text": "She'd lied to you, lied to me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 45.61952935364177,
+      "end": 47.465,
+      "text": "'Cause she was lovin' me, lovin' me, yeah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 47.838,
+      "end": 50.241,
+      "text": "I never woulda thought she was livin' like that",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 51.003,
+      "end": 53.646,
+      "text": "Her words seemed so sincere",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 54.25081402674626,
+      "end": 58.375,
+      "text": "When I held her near, she would tell me how she feels",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 59.316,
+      "end": 64.924,
+      "text": "It felt so real to me, this girl, she had to be",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 65.566,
+      "end": 68.912,
+      "text": "An angel sent from Heaven just for me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 68.951,
+      "end": 71.024,
+      "text": "She said she didn't have no man (Ah, ah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 71.24425610698505,
+      "end": 75.099,
+      "text": "Raised the kids the very best she can (Look, she's lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 74.50898857355222,
+      "end": 76.784,
+      "text": "She told me she was all alone",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 76.804,
+      "end": 78.82481973997014,
+      "text": "Said at home, she didn't have no phone (She was lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 79.07260520059697,
+      "end": 82.15,
+      "text": "She said just to give her a page",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 83.213,
+      "end": 84.534,
+      "text": "Fifty-nine was the code she gave",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 84.715,
+      "end": 86.819,
+      "text": "She'd lied to you, lied to me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 86.838,
+      "end": 91.405,
+      "text": "'Cause she was lovin' me, lovin' me, yeah (Look who's lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 91.76979117385069,
+      "end": 95.38918026002985,
+      "text": "She tried to live a double life",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 28,
+      "start": 95.48,
+      "end": 96.763,
+      "text": "Lovin' me while she was still your wife (She was wantin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 29,
+      "start": 96.772,
+      "end": 97.704,
+      "text": "She thought that lovin' me was cool",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 30,
+      "start": 98.977,
+      "end": 101.641,
+      "text": "With you at work and the kids at school (She was lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 31,
+      "start": 101.65,
+      "end": 102.703,
+      "text": "She said like it would never end",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 32,
+      "start": 102.95886130758201,
+      "end": 106.17434909361192,
+      "text": "Tried to keep me any way she can (She was wantin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 33,
+      "start": 107.611,
+      "end": 109.063,
+      "text": "She'd lied to you, lied to me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 34,
+      "start": 109.073,
+      "end": 111.978,
+      "text": "'Cause she got a family, family, yeah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 35,
+      "start": 112.028,
+      "end": 120.0867651708659,
+      "text": "Woah-oh-oh, no",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 36,
+      "start": 122.355,
+      "end": 122.506,
+      "text": "Alright",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 37,
+      "start": 122.555,
+      "end": 124.671,
+      "text": "Oh, I'm in love, love",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 38,
+      "start": 135.18165346952276,
+      "end": 137.817,
+      "text": "I didn't know she was already spoken for",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 39,
+      "start": 138.437,
+      "end": 141.04,
+      "text": "'Cause I'm not that kind of man",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 40,
+      "start": 141.923,
+      "end": 146.169,
+      "text": "Swear that I would've never looked her way",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 41,
+      "start": 146.509,
+      "end": 148.832,
+      "text": "Now I feel so much shame",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 42,
+      "start": 148.853,
+      "end": 152.718,
+      "text": "And all things have to change",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 43,
+      "start": 152.729,
+      "end": 156.006,
+      "text": "You should know that I'm holdin' her to blame",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 44,
+      "start": 156.026,
+      "end": 157.83,
+      "text": "She said she didn't have no man",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 45,
+      "start": 158.311,
+      "end": 160.917,
+      "text": "Raised the kids the very best she can (Holdin' her to blame)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 46,
+      "start": 161.538,
+      "end": 163.421,
+      "text": "She told me she was all alone",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 47,
+      "start": 164.003,
+      "end": 167.098,
+      "text": "Said at home, she didn't have no phone (Holdin' her to blame)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 48,
+      "start": 167.191,
+      "end": 170.586,
+      "text": "She said just to give her a page",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 49,
+      "start": 170.597,
+      "end": 173.8,
+      "text": "Fifty-nine was the code she gave (Holdin' her to blame)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 50,
+      "start": 173.3463548068358,
+      "end": 175.943,
+      "text": "She'd lied to you, lied to me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 51,
+      "start": 175.963,
+      "end": 179.198,
+      "text": "'Cause she was lovin' me, lovin' me, yeah (Holdin' her to blame)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 52,
+      "start": 178.66153506686567,
+      "end": 179.937,
+      "text": "She tried to live a double life",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 53,
+      "start": 180.37,
+      "end": 184.064,
+      "text": "Loving me while she was still your wife (Holdin' her to blame)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 54,
+      "start": 184.074,
+      "end": 185.556,
+      "text": "She thought that loving me was cool",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 55,
+      "start": 185.657,
+      "end": 188.079,
+      "text": "With you at work and the kids at school (Holdin' her to blame)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 56,
+      "start": 188.722,
+      "end": 189.662,
+      "text": "She said like it would never end",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 57,
+      "start": 190.03059948737308,
+      "end": 193.82625610698506,
+      "text": "Tried to keep me any way she can (Holdin' her to blame)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 58,
+      "start": 194.01825610698504,
+      "end": 197.1860758469552,
+      "text": "She'd lied to you, lied to me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 59,
+      "start": 197.29086702080588,
+      "end": 198.13986702080587,
+      "text": "'Cause she got a family, family, yeah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 60,
+      "start": 199.48725610698506,
+      "end": 202.274,
+      "text": "She said she didn't have no man (Ah, ah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 61,
+      "start": 202.283,
+      "end": 205.407,
+      "text": "Raised the kids the very best she can (Look, she's lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 62,
+      "start": 205.418,
+      "end": 207.293,
+      "text": "She told me she was all alone",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 63,
+      "start": 207.834,
+      "end": 211.3,
+      "text": "Said at home, she didn't have no phone (She was lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 64,
+      "start": 211.311,
+      "end": 212.675,
+      "text": "She said just to give her a page",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 65,
+      "start": 213.01510598811927,
+      "end": 213.98510598811927,
+      "text": "Fifty-nine was the code she gave (She's with me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 66,
+      "start": 214.26883845468646,
+      "end": 217.6512275408656,
+      "text": "She'd lied to you, lied to me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 67,
+      "start": 217.78577403417904,
+      "end": 222.198,
+      "text": "'Cause she was lovin' me, lovin' me, yeah (Look who's lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 68,
+      "start": 222.207,
+      "end": 223.641,
+      "text": "She tried to live a double life",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 69,
+      "start": 224.414,
+      "end": 226.768,
+      "text": "Lovin' me while she was still your wife (She was wantin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 70,
+      "start": 226.777,
+      "end": 229.213,
+      "text": "She thought that lovin' me was cool",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 71,
+      "start": 229.384,
+      "end": 232.8,
+      "text": "With you at work and the kids at school (She was lovin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 72,
+      "start": 232.81,
+      "end": 234.253,
+      "text": "She said like it would never end",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 73,
+      "start": 234.794,
+      "end": 237.838,
+      "text": "Tried to keep me any way she can (She was wantin' me)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 74,
+      "start": 237.848,
+      "end": 239.324,
+      "text": "She'd lied to you, lied to me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 75,
+      "start": 239.4704363670149,
+      "end": 242.47726182020892,
+      "text": "'Cause she got a family, family, yeah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 76,
+      "start": 247.51,
+      "end": 298.71,
+      "text": "Thanks for watching!",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 298.655011,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Michael_Jackson__Chicago\\audio_combined.m4a",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Michael_Jackson__Chicago\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\Michael_Jackson__Chicago",
+  "title": " Chicago",
+  "artist": "Michael Jackson"
+}

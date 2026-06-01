@@ -1,0 +1,303 @@
+{
+  "job_id": "Hoobastank_The_Reason",
+  "segments": [
+    {
+      "index": 0,
+      "start": 14.813,
+      "end": 19.772,
+      "text": "I'm not a perfect person",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 20.536,
+      "end": 24.672,
+      "text": "There's many things I wish I didn't do",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 26.356,
+      "end": 31.364,
+      "text": "But I continue learning",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 32.286,
+      "end": 37.994,
+      "text": "I never meant to do those things to you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 38.015,
+      "end": 43.685,
+      "text": "And so I have to say before I go",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 44.485,
+      "end": 48.652,
+      "text": "That I just want you to know",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 49.875,
+      "end": 52.92,
+      "text": "I've found a reason for me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 54.402,
+      "end": 60.548,
+      "text": "To change who I used to be",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 61.17,
+      "end": 66.557,
+      "text": "A reason to start over new",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 68.078,
+      "end": 71.703,
+      "text": "And the reason is you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 72.664,
+      "end": 77.25,
+      "text": "I'm sorry that I hurt you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 78.51,
+      "end": 82.536,
+      "text": "It's somethin' I must live with every day",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 84.236,
+      "end": 89.043,
+      "text": "And all the pain I put you through",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 90.084,
+      "end": 94.85,
+      "text": "I wish that I could take it all away",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 95.852,
+      "end": 102.501,
+      "text": "And be the one who catches all your tears",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 102.561,
+      "end": 105.254,
+      "text": "That's why I need you to hear",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 107.649,
+      "end": 112.433,
+      "text": "I've found a reason for me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 113.114,
+      "end": 119.001,
+      "text": "To change who I used to be",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 119.021,
+      "end": 124.406,
+      "text": "A reason to start over new",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 124.456,
+      "end": 125.844,
+      "text": "And the reason is you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 125.888,
+      "end": 131.693,
+      "text": "And the reason is you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 131.713,
+      "end": 134.697,
+      "text": "And the reason is you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 136.093,
+      "end": 147.387,
+      "text": "And the reason is you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 153.592,
+      "end": 158.179,
+      "text": "I'm not a perfect person",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 159.741,
+      "end": 164.366,
+      "text": "I never meant to do those things to you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 165.229,
+      "end": 171.075,
+      "text": "And so I have to say before I go",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 171.736,
+      "end": 176.022,
+      "text": "That I just want you to know",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 176.746,
+      "end": 181.858,
+      "text": "I've found a reason for me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 28,
+      "start": 182.558,
+      "end": 188.002,
+      "text": "To change who I used to be",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 29,
+      "start": 188.673,
+      "end": 194.687,
+      "text": "A reason to start over new",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 30,
+      "start": 195.038,
+      "end": 199.503,
+      "text": "And the reason is you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 31,
+      "start": 199.524,
+      "end": 204.971,
+      "text": "I've found a reason to show",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 32,
+      "start": 204.991,
+      "end": 210.897,
+      "text": "A side of me you didn't know",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 33,
+      "start": 210.918,
+      "end": 217.516,
+      "text": "A reason for all that I do",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 34,
+      "start": 218.487,
+      "end": 223.054,
+      "text": "And the reason is you",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 35,
+      "start": 233.456,
+      "end": 284.656,
+      "text": "Thanks for watching!",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 284.582993,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Hoobastank_The_Reason\\audio_combined.m4a",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Hoobastank_The_Reason\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\Hoobastank_The_Reason",
+  "title": "The Reason",
+  "artist": "Hoobastank"
+}

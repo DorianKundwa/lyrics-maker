@@ -1,0 +1,503 @@
+{
+  "job_id": "Veeze__Wrong_Place__Wrong_time",
+  "segments": [
+    {
+      "index": 0,
+      "start": 1.667,
+      "end": 2.569,
+      "text": "Yeah, yeah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 3.991,
+      "end": 5.262,
+      "text": "I'll wrong place, wrong time a nigga",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 5.333,
+      "end": 7.836,
+      "text": "Put these niggas' money under the light, it might be counterfeit",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 8.037,
+      "end": 10.58,
+      "text": "Watered down-ass nigga like we washin' collard greens",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 10.68,
+      "end": 13.403,
+      "text": "Give his ho a collared shirt, make her do white collar schemes",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 13.423,
+      "end": 16.007,
+      "text": "I dropped out of college, but Jay and Dame ain't sign me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 16.027,
+      "end": 18.131,
+      "text": "Soon as they cap and gowned me, seemed like we start robbin'",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 18.711,
+      "end": 21.214,
+      "text": "I can't say I want that nigga free, I don't know if he talkin'",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 21.234,
+      "end": 23.597,
+      "text": "If doggy say he want that smoke with me, I bet I horse him",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 23.859,
+      "end": 26.663,
+      "text": "You see me with that ho, it's intercourse, yeah, of course, duh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 26.672,
+      "end": 28.977,
+      "text": "My life is a movie, like Four Brothers, shoot the court up",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 29.408,
+      "end": 32.073,
+      "text": "My lil' bitches gotta have at least Benzes or a Porsche truck",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 32.094,
+      "end": 34.497,
+      "text": "I don't drink no coffee, went to Starbucks for a ice cup",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 35.96,
+      "end": 37.511,
+      "text": "Spin the bin, sign his ass to Vez', leave him iced up",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 37.521,
+      "end": 40.048,
+      "text": "I need every penny that I'm owed like the IRS",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 40.249,
+      "end": 42.131,
+      "text": "Nigga, you better get a fuckin' vest, they got head protectors",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 42.713,
+      "end": 45.118,
+      "text": "Hold on, let me check if this pill real, do the light test",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 45.238,
+      "end": 47.402,
+      "text": "I always got one eye on the money, now I'm Cyclops",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 48.084,
+      "end": 50.548,
+      "text": "I'ma serve him my dog, but I think I got nine lives left",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 50.668,
+      "end": 53.414,
+      "text": "Yeah, you got that wet-wet, but now I need some neck sex",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 53.433,
+      "end": 56.018,
+      "text": "I done flew that P-jet more than a New York Jet",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 56.037,
+      "end": 58.682,
+      "text": "Think I need drug management, I'm the lean commissioner",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 58.902,
+      "end": 61.087,
+      "text": "Take his bitch, he missin' her, gone, milk carton pitcher",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 61.408,
+      "end": 63.692,
+      "text": "Fillin' out these apps to become Akorn representative",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 64.192,
+      "end": 66.837,
+      "text": "M pills gettin' the best of you, boy, look like you got sickle cell",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 66.846,
+      "end": 68.968,
+      "text": "He the type to snitch, can't even stomach sittin' in the cell",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 69.54,
+      "end": 71.641,
+      "text": "Who gon' slip? Be donkey of the day, we playin' Pin The Tail",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 72.043,
+      "end": 74.665,
+      "text": "Doggy ass ain't fightin' demons, heard that he was gay in jail",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 28,
+      "start": 74.686,
+      "end": 76.918,
+      "text": "Fuck you need my number for? You tryna send me fan mail?",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 29,
+      "start": 77.349,
+      "end": 79.852,
+      "text": "Fuck 12, just give me my wallet, I could post bail",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 30,
+      "start": 80.313,
+      "end": 82.644,
+      "text": "Goddamn, niggas gettin' RICO'd and they free as hell",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 31,
+      "start": 82.676,
+      "end": 85.117,
+      "text": "They say that we live in hell, I just smoked a zip in hell",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 32,
+      "start": 85.418,
+      "end": 87.781,
+      "text": "Take me to Balenci' store, damn, they got some shit in here",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 33,
+      "start": 88.081,
+      "end": 90.385,
+      "text": "I know it's fun while it last, but I gotta end it here",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 34,
+      "start": 91.045,
+      "end": 92.727,
+      "text": "Lil' sis down to ride dirty, she think she Chamillionaire",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 35,
+      "start": 93.248,
+      "end": 95.99,
+      "text": "I don't wear no durag, I don't do 360 deal",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 36,
+      "start": 96.331,
+      "end": 98.433,
+      "text": "Twenty bands gone, wearin' shit that y'all can't even spell",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 37,
+      "start": 98.674,
+      "end": 100.885,
+      "text": "Seven on my back just like Kaep, I might take a kneel",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 38,
+      "start": 102.299,
+      "end": 103.9,
+      "text": "Spin a nigga block without no Wock', now it's a lame drill",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 39,
+      "start": 104.182,
+      "end": 106.905,
+      "text": "Once a nigga tell the truth in court, I just can't forgive him",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 40,
+      "start": 106.924,
+      "end": 109.168,
+      "text": "Once a nigga say he talked to 12, I don't hear nothin' else",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 41,
+      "start": 109.748,
+      "end": 111.93,
+      "text": "Grown man ball, break a leg, I ain't break a sweat",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 42,
+      "start": 112.091,
+      "end": 114.515,
+      "text": "Green face, brought it just like lean off a turkey bed",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 43,
+      "start": 115.015,
+      "end": 117.158,
+      "text": "Cuddy drinkin' green by the box, call him turtle head",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 44,
+      "start": 117.278,
+      "end": 120.621,
+      "text": "I just bought her Skims by the box, she look up to Kim",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 45,
+      "start": 120.643,
+      "end": 122.584,
+      "text": "We just sippin' glass, Tech red, you was a regular man",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 46,
+      "start": 122.706,
+      "end": 125.168,
+      "text": "Thinkin' 'bout my first ten bands, had no facial hair",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 47,
+      "start": 125.709,
+      "end": 127.852,
+      "text": "Young nigga, I'ma feel endless with my face rare",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 48,
+      "start": 129.215,
+      "end": 130.676,
+      "text": "Angel Reese TikTok, my song got my bitch scared",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 49,
+      "start": 130.997,
+      "end": 133.18,
+      "text": "You can drop me anywhere, a stove and some kitchenware",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 50,
+      "start": 133.461,
+      "end": 135.864,
+      "text": "Box of baking soda, bet I come right back a millionaire",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 51,
+      "start": 136.145,
+      "end": 138.527,
+      "text": "And I kept it lit up for the city, I ain't even been in there",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 52,
+      "start": 138.828,
+      "end": 141.292,
+      "text": "Once these niggas pay, text Caine, but I'm shitty where?",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 53,
+      "start": 141.331,
+      "end": 142.473,
+      "text": "We trippin' still, nigga",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 54,
+      "start": 143.594,
+      "end": 144.956,
+      "text": "Wavy Navy boys, we Can't Be Fucked With",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 55,
+      "start": 149.329,
+      "end": 150.852,
+      "text": "Lucky the Feds on that hot shit with the lyrics, nigga",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 56,
+      "start": 150.891,
+      "end": 152.213,
+      "text": "I'll really say somethin' crazy",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 57,
+      "start": 153.096,
+      "end": 155.139,
+      "text": "But I'm five up off a ten, lil nigga",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 58,
+      "start": 156.483,
+      "end": 159.868,
+      "text": "Look in the mirror, I ain't in it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 59,
+      "start": 159.919,
+      "end": 167.514,
+      "text": "(And I'm servin' bass, bitch, I'm in this bitch with BassKids)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 60,
+      "start": 177.423,
+      "end": 228.623,
+      "text": "Thanks for watching!",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 228.553991,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Veeze__Wrong_Place__Wrong_time\\audio_combined.m4a",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Veeze__Wrong_Place__Wrong_time\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\Veeze__Wrong_Place__Wrong_time",
+  "title": " Wrong Place, Wrong time",
+  "artist": "Veeze"
+}

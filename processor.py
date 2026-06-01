@@ -347,12 +347,17 @@ def generate_instrumental_video(
     work_dir = Path(output_path).parent
     audio = _build_audio(work_dir, Path(audio_path), Path(outro_path) if outro_path else None)
 
-    # Optional title watermark using drawtext
+    # Optional title watermark using drawtext with textfile= to avoid special-char escaping issues
     vf = _VIDEO_SCALE
+    textfile_path = None
     if title or artist:
-        label = _ffmpeg_escape(f"{artist} — {title}" if (artist and title) else (title or artist))
+        label = f"{artist} \u2014 {title}" if (artist and title) else (title or artist)
+        textfile_path = work_dir / "_watermark.txt"
+        textfile_path.write_text(label, encoding="utf-8")
+        textfile_escaped = _ffmpeg_escape_path(str(textfile_path))
+        fontfile_escaped = _ffmpeg_escape_path(FONT_REGULAR)
         vf += (
-            f",drawtext=fontfile={FONT_REGULAR}:text='{label}'"
+            f",drawtext=fontfile={fontfile_escaped}:textfile={textfile_escaped}"
             f":fontsize=36:fontcolor=white@0.7:bordercolor=black@0.5:borderw=2"
             f":x=40:y=40"
         )
@@ -363,7 +368,13 @@ def generate_instrumental_video(
         "-vf", vf,
         "-shortest",
     ] + _VIDEO_ENCODE + [str(output_path)]
-    subprocess.run(cmd, check=True, capture_output=True)
+    result = subprocess.run(cmd, capture_output=True)
+    if result.returncode != 0:
+        raise subprocess.CalledProcessError(
+            result.returncode, cmd,
+            output=result.stdout,
+            stderr=result.stderr
+        )
 
 
 def generate_lyrics_video(
@@ -378,7 +389,6 @@ def generate_lyrics_video(
     font_name: str = "Arial",
     font_size: int = 72,
     word_highlight: bool = True,
-    language: str = "en",
 ) -> None:
     """Background image + synced lyrics subtitles + audio."""
     work_dir = Path(output_path).parent
@@ -392,7 +402,7 @@ def generate_lyrics_video(
         print("Un-timed lyrics detected. Running intelligent alignment on vocals...")
         try:
             from aligners import align, parse_alignment_json
-            align_json = align(str(vocals_path), str(lyrics_path), language=language)
+            align_json = align(str(vocals_path), str(lyrics_path))
             timed = parse_alignment_json(align_json)
         except Exception as e:
             print(f"Alignment engine failed: {e}. Falling back to even spacing.")
@@ -460,7 +470,14 @@ def generate_lyrics_video(
 
 
 def _ffmpeg_escape(text: str) -> str:
+    """Escape text for use inside ffmpeg drawtext text= value."""
     return text.replace("\\", "\\\\").replace("'", "\\'").replace(":", "\\:")
+
+
+def _ffmpeg_escape_path(path: str) -> str:
+    """Escape a file path for use in an ffmpeg filter option value.
+    Converts backslashes to forward slashes and escapes colons (Windows drive letters)."""
+    return path.replace("\\", "/").replace(":", "\\:")
 
 
 def _ass_escape_path(path: str) -> str:

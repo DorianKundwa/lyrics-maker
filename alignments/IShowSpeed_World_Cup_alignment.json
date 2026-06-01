@@ -1,0 +1,607 @@
+{
+  "job_id": "IShowSpeed_World_Cup",
+  "segments": [
+    {
+      "index": 0,
+      "start": 4.384,
+      "end": 14.66,
+      "text": "Let's go",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 14.701,
+      "end": 17.885,
+      "text": "Everybody rise up",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 18.807,
+      "end": 19.708,
+      "text": "Stand up",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 20.811,
+      "end": 22.073,
+      "text": "It's that time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 23.099,
+      "end": 23.6,
+      "text": "Come on",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 24.46,
+      "end": 28.829,
+      "text": "We got Portugal, we got Mexico, France, England, Brazil",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 29.469,
+      "end": 31.292,
+      "text": "Belgium, Q-tar, Germany",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 32.195,
+      "end": 34.078,
+      "text": "USA, Iran, Canada",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 35.72,
+      "end": 36.601,
+      "text": "Argentinia, Australia",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 37.924,
+      "end": 39.807,
+      "text": "Crotia, Switzerland, Ghana, Japan",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 41.31,
+      "end": 43.875,
+      "text": "Urugay, Morocco, Sauda Arabia",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 44.756,
+      "end": 47.84,
+      "text": "Ecudor, Wales, Poland, Tsunsia",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 47.86,
+      "end": 50.323,
+      "text": "Cameroon, Serbia, Korea",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 50.564,
+      "end": 53.487,
+      "text": "Netherlands, Senegal, Costa Rico",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 54.53,
+      "end": 64.242,
+      "text": "Let's play football",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 64.293,
+      "end": 71.373,
+      "text": "World Cup (uh), World Cup (uh), World Cup (uh), World Cup (uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 71.423,
+      "end": 72.673,
+      "text": "World Cup (uh), World Cup (uh), World Cup (uh), World Cup (uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 72.683,
+      "end": 74.638,
+      "text": "World Cup, it's time to play football",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 74.647,
+      "end": 80.185,
+      "text": "World Cup, it's time to play football",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 80.234,
+      "end": 88.53,
+      "text": "World Cup (uh), World Cup (uh), World Cup (uh), World Cup (uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 88.579,
+      "end": 92.674,
+      "text": "Arf, arf, arf, arf (uh, ayy)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 92.724,
+      "end": 102.42,
+      "text": "Hell nah, man, let's get right, got Portugal with the come with the nightlight",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 102.469,
+      "end": 106.564,
+      "text": "Mexico, we come with the right",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 118.355,
+      "end": 119.155,
+      "text": "Italy, yeah, we come with right, like",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 119.204,
+      "end": 120.055,
+      "text": "Cameroon, we came with the pipe (uh, ayy)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 120.064,
+      "end": 120.564,
+      "text": "Mexico, we comin' right, like",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 120.575,
+      "end": 121.275,
+      "text": "World Cup time, fight t-'til we die",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 121.284,
+      "end": 122.385,
+      "text": "We up-up in the field, we finna hit 'til we die",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 28,
+      "start": 122.394,
+      "end": 123.194,
+      "text": "Kick t-'til we die, hunt until we die",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 29,
+      "start": 123.204,
+      "end": 124.204,
+      "text": "Headers until we die and like hattricks, we finna try",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 30,
+      "start": 124.215,
+      "end": 125.314,
+      "text": "Hey, hold on, who finna win? Twenty-two, we on the ban'",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 31,
+      "start": 125.325,
+      "end": 126.525,
+      "text": "World Cup and that Q-tar, you know we hoppin', I'ma jet, hah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 32,
+      "start": 126.534,
+      "end": 127.734,
+      "text": "Mexico, we up in there, got a lil', for my fans, like",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 33,
+      "start": 127.745,
+      "end": 128.645,
+      "text": "Hell nah, we up in this dance, hah, arf",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 34,
+      "start": 128.655,
+      "end": 129.155,
+      "text": "I like to play football",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 35,
+      "start": 129.164,
+      "end": 130.365,
+      "text": "If Ronaldo finna win, we gon' get hit it like it's tofall",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 36,
+      "start": 130.375,
+      "end": 131.175,
+      "text": "Argentinia, man, what's up? Messi, he finna what?",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 37,
+      "start": 131.185,
+      "end": 132.783,
+      "text": "Messi, you what to what? Messi, you 'bout to huh, huh?",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 38,
+      "start": 133.616,
+      "end": 135.967,
+      "text": "Hattricks, we up in this, man, we up and turnt in a Ben'",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 39,
+      "start": 136.56,
+      "end": 139.163,
+      "text": "Messi, you're not finna win, Ronaldo, he 'bout to win",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 40,
+      "start": 139.212,
+      "end": 141.907,
+      "text": "Siuu, Siuu, Siuu, Siuu",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 41,
+      "start": 141.957,
+      "end": 148.853,
+      "text": "Foi na onda da droga, foi-foi-foi na onda da droga",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 42,
+      "start": 148.902,
+      "end": 155.798,
+      "text": "Foi na onda da droga, foi-foi-foi na onda da droga",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 43,
+      "start": 155.848,
+      "end": 164.143,
+      "text": "World Cup (uh), World Cup (uh), World Cup (uh), World Cup (football)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 44,
+      "start": 164.193,
+      "end": 172.487,
+      "text": "World Cup (uh), World Cup (uh), World Cup (uh), World Cup (Siuu)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 45,
+      "start": 173.544,
+      "end": 174.645,
+      "text": "World Cup (uh), it's time to play football (uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 46,
+      "start": 174.825,
+      "end": 177.468,
+      "text": "World Cup (uh), it's time to play football (uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 47,
+      "start": 177.519,
+      "end": 185.813,
+      "text": "World Cup (uh), World Cup (uh), World Cup (uh), World Cup (uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 48,
+      "start": 185.864,
+      "end": 187.418,
+      "text": "Todo do ma foto",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 49,
+      "start": 187.478,
+      "end": 195.329,
+      "text": "Football, football, oh, football, oh, football",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 50,
+      "start": 195.53,
+      "end": 198.483,
+      "text": "Mexico, turnin' up, Portugal, turnin' up (uh, uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 51,
+      "start": 198.492,
+      "end": 201.266,
+      "text": "Brazil, turnin' up, Cameroon, turn it up (uh, uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 52,
+      "start": 201.276,
+      "end": 203.711,
+      "text": "Switzerland, turnin' up, oh, Argentinia, are turnin' (uh, uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 53,
+      "start": 204.603,
+      "end": 205.652,
+      "text": "I got England, yeah, we burnin' up (uh, uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 54,
+      "start": 205.663,
+      "end": 206.685,
+      "text": "Let's get it, we turnin' up (ah, ah-ah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 55,
+      "start": 206.735,
+      "end": 207.58,
+      "text": "Let's get it, World Cup (uh, uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 56,
+      "start": 207.591,
+      "end": 208.617,
+      "text": "Let's get it, let's get it (uh, uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 57,
+      "start": 208.668,
+      "end": 209.918,
+      "text": "Papa, yeah, we turnin' up, papa, yeah, we turnin' up (uh, uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 58,
+      "start": 209.927,
+      "end": 210.627,
+      "text": "Give me paya, we turnin' (uh, uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 59,
+      "start": 210.638,
+      "end": 211.538,
+      "text": "World Cup, man, yeah, we turnin' up (uh, uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 60,
+      "start": 211.548,
+      "end": 222.098,
+      "text": "Come on now, man, it's that World Cup time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 61,
+      "start": 222.58,
+      "end": 229.549,
+      "text": "Y'all know who 'bout to win, Christian Ronaldo, Portugal",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 62,
+      "start": 229.949,
+      "end": 232.491,
+      "text": "Portugal versus Argentinia, Ronaldo versus Messi",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 63,
+      "start": 233.293,
+      "end": 234.313,
+      "text": "In the last stage",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 64,
+      "start": 235.335,
+      "end": 236.616,
+      "text": "Ronaldo scores a free kick",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 65,
+      "start": 237.437,
+      "end": 238.276,
+      "text": "And that's game, three-to-two",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 66,
+      "start": 240.46,
+      "end": 241.56,
+      "text": "GG's to all the rest of the countries, man",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 67,
+      "start": 241.569,
+      "end": 243.542,
+      "text": "Brazil, you might win, Mexico, you not winnin'",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 68,
+      "start": 243.581,
+      "end": 246.625,
+      "text": "Switzerland, you have a chance, uh, France, you might got a chance",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 69,
+      "start": 246.664,
+      "end": 249.388,
+      "text": "England, you have a chance, Germany, you might got a chance",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 70,
+      "start": 249.448,
+      "end": 250.348,
+      "text": "USA, I don't know",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 71,
+      "start": 250.929,
+      "end": 254.752,
+      "text": "But, hey, tss, let's get it, man, it's that World Cup time, man",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 72,
+      "start": 255.293,
+      "end": 255.993,
+      "text": "We out",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 73,
+      "start": 269.244,
+      "end": 337.345,
+      "text": "Thanks for watching!",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 337.27,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\IShowSpeed_World_Cup\\audio_combined.m4a",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\IShowSpeed_World_Cup\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\IShowSpeed_World_Cup",
+  "title": "World Cup",
+  "artist": "IShowSpeed"
+}

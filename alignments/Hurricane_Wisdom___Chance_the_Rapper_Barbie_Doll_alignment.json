@@ -1,0 +1,527 @@
+{
+  "job_id": "Hurricane_Wisdom___Chance_the_Rapper_Barbie_Doll",
+  "segments": [
+    {
+      "index": 0,
+      "start": 5.953,
+      "end": 12.555,
+      "text": "Okay",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 16.509,
+      "end": 19.317,
+      "text": "Ayy, okay, huh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 20.21,
+      "end": 23.173,
+      "text": "God, this lil' bitch bad, know she a bag, know she a Barbie doll",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 23.914,
+      "end": 26.478,
+      "text": "Swerve, I move too fast, we just might crash, you know I ain't driving slow",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 26.487,
+      "end": 30.062,
+      "text": "She ain't got nothin' but ass, nothin' but class, just know I ain't leaving alone",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 30.384,
+      "end": 31.765,
+      "text": "I got nothin' but cash in a roll",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 32.206,
+      "end": 34.167,
+      "text": "If you got a twin, I'm grabbin' you both (Okay, this beat from wylan)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 34.176,
+      "end": 35.299,
+      "text": "Hunt the keys, I'm grabbin' the boat",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 35.651,
+      "end": 37.091,
+      "text": "Say you P 'cause I'm givin' you more",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 37.171,
+      "end": 38.875,
+      "text": "Baby, don't tease, you know that we grown",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 39.335,
+      "end": 40.597,
+      "text": "Keep shit quiet, you know what you know",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 40.856,
+      "end": 42.209,
+      "text": "And I got time, I'm doin' the most",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 42.619,
+      "end": 43.92,
+      "text": "Don't got time, I just pour a four",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 44.201,
+      "end": 45.764,
+      "text": "You need me, you know where to go",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 45.783,
+      "end": 47.706,
+      "text": "Keep shit quiet, you know what you know",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 48.073,
+      "end": 51.267,
+      "text": "Pretty girls style in a gold heart, toot your smile in a glow (Glow)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 52.018,
+      "end": 55.072,
+      "text": "Thrifted dress, but it's skin-tight, damn near can see her soul (Soul)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 55.082,
+      "end": 57.804,
+      "text": "She wanna have a big night, espresso martini soul",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 58.526,
+      "end": 61.92,
+      "text": "She finna do her big one, h\u0435r ex grabbed his chest, said, \"Oh no\" (Oh no)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 62.051,
+      "end": 62.871,
+      "text": "Grabbin' and kissin' h\u0435r neck",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 62.892,
+      "end": 64.673,
+      "text": "Pickin' her up, he sendin' her texts (What?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 64.683,
+      "end": 66.195,
+      "text": "He callin' her phone, tried gettin' her back",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 66.256,
+      "end": 68.237,
+      "text": "I'm tellin' her friends, \"Go climb in the back\" (Yeah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 68.248,
+      "end": 69.68,
+      "text": "We ridin' around, he circlin' back",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 69.7,
+      "end": 71.542,
+      "text": "We paintin' the town, he lurkin' on apps",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 71.561,
+      "end": 74.846,
+      "text": "She in the front seat doing karaoke while her two best friends wanna twerk in the back",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 75.066,
+      "end": 76.748,
+      "text": "Fourth one left and the third took a nap",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 76.757,
+      "end": 78.439,
+      "text": "Second one sittin' in the first one lap (Yeah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 28,
+      "start": 78.551,
+      "end": 82.296,
+      "text": "Said, \"Take us home, take care of our girl,\" and the rest was a verse and the verse was a wrap (Uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 29,
+      "start": 82.305,
+      "end": 83.918,
+      "text": "Keep my word, keep the dirt under wraps",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 30,
+      "start": 83.959,
+      "end": 85.301,
+      "text": "Happy ending, it was perfect at that",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 31,
+      "start": 85.522,
+      "end": 88.947,
+      "text": "Keep my number in case of emergencies, if you prefer, then we can sure run it back (What?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 32,
+      "start": 89.347,
+      "end": 92.912,
+      "text": "God, this lil' bitch bad, know she a bag, know she a Barbie doll",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 33,
+      "start": 93.554,
+      "end": 96.037,
+      "text": "Swerve, I move too fast, we just might crash, you know I ain't driving slow",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 34,
+      "start": 96.838,
+      "end": 99.453,
+      "text": "She ain't got nothin' but ass, nothin' but class, just know I ain't leaving alone",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 35,
+      "start": 100.043,
+      "end": 101.507,
+      "text": "I got nothin' but cash in a roll",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 36,
+      "start": 101.516,
+      "end": 102.989,
+      "text": "If you got a twin, I'm grabbin' you both",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 37,
+      "start": 103.59,
+      "end": 106.477,
+      "text": "Okay, pretty girls raised in the Chrome Heart, I gave her the nickname Cold",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 38,
+      "start": 107.56,
+      "end": 108.81,
+      "text": "Have you read a book on the murder she wrote? (Woah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 39,
+      "start": 108.963,
+      "end": 110.147,
+      "text": "What's the chance of me taking you home?",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 40,
+      "start": 110.649,
+      "end": 111.781,
+      "text": "Say, Chance, I'm callin' an iso",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 41,
+      "start": 112.212,
+      "end": 113.966,
+      "text": "Are you hearin' me clear? Is the mic' on?",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 42,
+      "start": 114.117,
+      "end": 115.4,
+      "text": "In the club, we can do it with the lights on",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 43,
+      "start": 115.662,
+      "end": 117.846,
+      "text": "We'll both be home when the night gone (Yeah, bae)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 44,
+      "start": 119.121,
+      "end": 120.584,
+      "text": "You too fine to be stuck in the phone",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 45,
+      "start": 120.963,
+      "end": 122.325,
+      "text": "I'ma fuck the first night 'cause I'm grown",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 46,
+      "start": 122.706,
+      "end": 124.387,
+      "text": "Baby, who the fuck said I was all bad?",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 47,
+      "start": 124.528,
+      "end": 125.789,
+      "text": "Even then, you said, \"They wrong\"",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 48,
+      "start": 126.049,
+      "end": 127.99,
+      "text": "I can look and just tell that you all bad",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 49,
+      "start": 128.29,
+      "end": 130.614,
+      "text": "I can tell that you all bad, oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 50,
+      "start": 131.074,
+      "end": 134.496,
+      "text": "God, this lil' bitch bad, know she a bag, know she a Barbie doll",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 51,
+      "start": 135.177,
+      "end": 137.781,
+      "text": "Swerve, I move too fast, we just might crash, you know I ain't driving slow",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 52,
+      "start": 137.79,
+      "end": 141.403,
+      "text": "She ain't got nothin' but ass, nothin' but class, just know I ain't leaving alone",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 53,
+      "start": 141.685,
+      "end": 143.086,
+      "text": "I got nothin' but cash in a roll",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 54,
+      "start": 143.406,
+      "end": 145.087,
+      "text": "If you got a twin, I'm grabbin' you both",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 55,
+      "start": 146.23,
+      "end": 147.091,
+      "text": "Hunt the keys, I'm grabbin' the boat",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 56,
+      "start": 147.1,
+      "end": 148.395,
+      "text": "Say you P 'cause I'm givin' you more",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 57,
+      "start": 148.475,
+      "end": 150.139,
+      "text": "Baby, don't tease, you know that we grown",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 58,
+      "start": 150.641,
+      "end": 151.884,
+      "text": "Keep shit quiet, you know what you know",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 59,
+      "start": 152.145,
+      "end": 153.518,
+      "text": "And I got time, I'm doin' the most",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 60,
+      "start": 153.788,
+      "end": 155.211,
+      "text": "Don't got time, I just pour a four",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 61,
+      "start": 155.574,
+      "end": 157.078,
+      "text": "You need me, you know where to go",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 62,
+      "start": 157.098,
+      "end": 159.282,
+      "text": "Keep shit quiet, you know what you know",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 63,
+      "start": 172.564,
+      "end": 223.764,
+      "text": "Thanks for watching!",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 223.700998,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Hurricane_Wisdom___Chance_the_Rapper_Barbie_Doll\\audio_combined.m4a",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Hurricane_Wisdom___Chance_the_Rapper_Barbie_Doll\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\Hurricane_Wisdom___Chance_the_Rapper_Barbie_Doll",
+  "title": "Barbie Doll",
+  "artist": "Hurricane Wisdom & Chance the Rapper"
+}

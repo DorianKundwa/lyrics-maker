@@ -1,0 +1,743 @@
+{
+  "job_id": "Future__Tyla__Game_Time",
+  "segments": [
+    {
+      "index": 0,
+      "start": 0.798,
+      "end": 2.563,
+      "text": "Me heard what you said through the grapevine",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 2.623,
+      "end": 4.687,
+      "text": "Funny thing 'bout your problems, they ain't mine",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 5.108,
+      "end": 6.551,
+      "text": "Staying up through the late night",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 7.192,
+      "end": 8.717,
+      "text": "Twenty seconds till game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 9.599,
+      "end": 10.881,
+      "text": "Getting religious with it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 11.583,
+      "end": 12.787,
+      "text": "How I'm crossing these state lines",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 13.327,
+      "end": 14.791,
+      "text": "Working hard through the late nights",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 15.372,
+      "end": 17.617,
+      "text": "Twenty seconds till game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 17.628,
+      "end": 19.239,
+      "text": "I see the stars in the sky",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 19.26,
+      "end": 20.862,
+      "text": "I see me standing on top of it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 22.225,
+      "end": 23.367,
+      "text": "Need two accountants",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 23.407,
+      "end": 24.949,
+      "text": "Made a lot more than a lot of it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 26.111,
+      "end": 27.513,
+      "text": "I'm with the fam, fam",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 27.873,
+      "end": 29.035,
+      "text": "We Batman and Robin it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 30.257,
+      "end": 30.928,
+      "text": "Call for the game game",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 31.618,
+      "end": 33.161,
+      "text": "No, there ain't no stopping it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 36.686,
+      "end": 37.328,
+      "text": "Yeah, game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 38.472,
+      "end": 41.155,
+      "text": "Oh yeah, oh yeah, game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 41.335,
+      "end": 43.338,
+      "text": "Kick it like FIFA across the world",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 43.348,
+      "end": 45.481,
+      "text": "No stopping me, shorties be clocking me",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 45.621,
+      "end": 47.304,
+      "text": "This for the ones that came out of poverty",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 47.624,
+      "end": 49.366,
+      "text": "This for the ones that never gave up",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 49.726,
+      "end": 51.779,
+      "text": "This for the ones that's turning it up (Who else?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 51.789,
+      "end": 53.811,
+      "text": "This for the fans, my fam I trust (Yeah)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 53.832,
+      "end": 55.875,
+      "text": "This for the game we love (Game)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 55.884,
+      "end": 57.578,
+      "text": "Seven figures all above (Above)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 57.817,
+      "end": 60.009,
+      "text": "Going all the way around the world (The world)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 60.201,
+      "end": 61.593,
+      "text": "Icing the cup out with pearls (Uh, skee)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 28,
+      "start": 63.865,
+      "end": 66.049,
+      "text": "Yeah, game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 29,
+      "start": 67.192,
+      "end": 69.899,
+      "text": "Oh yeah, oh yeah, game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 30,
+      "start": 70.138,
+      "end": 71.462,
+      "text": "It's true, I'm a issue",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 31,
+      "start": 71.561,
+      "end": 73.073,
+      "text": "If you don't wanna win, how can I assist you?",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 32,
+      "start": 73.686,
+      "end": 75.45,
+      "text": "Make a referee wanna blow the whistle",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 33,
+      "start": 75.79,
+      "end": 76.763,
+      "text": "Everything fit, I'm official",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 34,
+      "start": 78.316,
+      "end": 79.539,
+      "text": "You don't want to see me go beast mode",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 35,
+      "start": 80.4,
+      "end": 82.064,
+      "text": "You don't want to see me on a good day",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 36,
+      "start": 82.465,
+      "end": 83.737,
+      "text": "Pulling up, looking like a cheat code",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 37,
+      "start": 84.95,
+      "end": 86.944,
+      "text": "Boricua screaming out ol\u00e9 (Ol\u00e9)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 38,
+      "start": 86.954,
+      "end": 88.296,
+      "text": "Caviar, escargot",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 39,
+      "start": 88.316,
+      "end": 90.519,
+      "text": "I'm a pop star, yeah, this is platinum rocks (Ol\u00e9)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 40,
+      "start": 91.579,
+      "end": 92.379,
+      "text": "Pluto brought the princess to the block",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 41,
+      "start": 92.46,
+      "end": 94.754,
+      "text": "I ain't want the pink one, he got the tiger from the shop (Ol\u00e9, ol\u00e9)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 42,
+      "start": 94.804,
+      "end": 96.099,
+      "text": "Ayebo, ayebo",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 43,
+      "start": 99.188,
+      "end": 99.968,
+      "text": "Tens with me, never cincos",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 44,
+      "start": 101.29,
+      "end": 102.052,
+      "text": "Tens on me like I'm Dino",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 45,
+      "start": 104.555,
+      "end": 105.605,
+      "text": "Me heard what you said through the grapevine",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 46,
+      "start": 105.614,
+      "end": 107.097,
+      "text": "Funny thing 'bout your problems, they ain't mine",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 47,
+      "start": 107.677,
+      "end": 109.14,
+      "text": "Staying up through the late night",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 48,
+      "start": 110.061,
+      "end": 111.983,
+      "text": "Twenty seconds till game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 49,
+      "start": 111.992,
+      "end": 113.305,
+      "text": "Getting religious with it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 50,
+      "start": 113.926,
+      "end": 115.368,
+      "text": "How I'm crossing these state lines",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 51,
+      "start": 115.868,
+      "end": 117.591,
+      "text": "Working hard through the late nights",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 52,
+      "start": 118.212,
+      "end": 119.555,
+      "text": "Twenty seconds till game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 53,
+      "start": 120.778,
+      "end": 121.819,
+      "text": "I see the stars in the sky",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 54,
+      "start": 122.04,
+      "end": 124.471,
+      "text": "I see me standing on top of it (I see the stars in the sky)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 55,
+      "start": 124.504,
+      "end": 125.945,
+      "text": "Need two accountants",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 56,
+      "start": 125.986,
+      "end": 127.498,
+      "text": "Made a lot more than a lot of it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 57,
+      "start": 127.588,
+      "end": 130.092,
+      "text": "I'm with the fam, fam",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 58,
+      "start": 130.473,
+      "end": 132.094,
+      "text": "We Batman and Robin it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 59,
+      "start": 132.836,
+      "end": 134.158,
+      "text": "Call for the game game",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 60,
+      "start": 134.719,
+      "end": 137.425,
+      "text": "No, there ain't no stopping it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 61,
+      "start": 137.474,
+      "end": 137.75,
+      "text": "Ah, ah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 62,
+      "start": 137.759,
+      "end": 139.348,
+      "text": "There ain't no stopping it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 63,
+      "start": 139.367,
+      "end": 141.151,
+      "text": "There ain't no stopping it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 64,
+      "start": 141.17,
+      "end": 142.614,
+      "text": "There ain't no stopping it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 65,
+      "start": 142.663,
+      "end": 143.959,
+      "text": "Ah, ah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 66,
+      "start": 146.48,
+      "end": 149.675,
+      "text": "Every day I be grinding and stacking",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 67,
+      "start": 150.768,
+      "end": 153.802,
+      "text": "That's why I'm so proud of it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 68,
+      "start": 153.853,
+      "end": 155.147,
+      "text": "Ah, ah",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 69,
+      "start": 155.415,
+      "end": 156.777,
+      "text": "Flying like I'm in a paper plane",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 70,
+      "start": 157.157,
+      "end": 158.3,
+      "text": "Landing in my private property",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 71,
+      "start": 163.447,
+      "end": 163.706,
+      "text": "Yeah, ooh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 72,
+      "start": 163.717,
+      "end": 165.27,
+      "text": "Put it on everything, ain't no stopping it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 73,
+      "start": 165.289,
+      "end": 167.943,
+      "text": "No, no, it ain't no stopping it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 74,
+      "start": 169.055,
+      "end": 170.697,
+      "text": "Me heard what you said through the grapevine",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 75,
+      "start": 171.298,
+      "end": 172.699,
+      "text": "Funny thing 'bout your problems, they ain't mine",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 76,
+      "start": 173.741,
+      "end": 174.763,
+      "text": "Staying up through the late night",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 77,
+      "start": 175.704,
+      "end": 177.306,
+      "text": "Twenty seconds till game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 78,
+      "start": 178.122,
+      "end": 178.963,
+      "text": "Getting religious with it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 79,
+      "start": 179.764,
+      "end": 180.986,
+      "text": "How I'm crossing these state lines",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 80,
+      "start": 181.989,
+      "end": 183.23,
+      "text": "Working hard through the late nights",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 81,
+      "start": 183.55,
+      "end": 186.034,
+      "text": "Twenty seconds till game time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 82,
+      "start": 186.055,
+      "end": 187.456,
+      "text": "I see the stars in the sky",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 83,
+      "start": 187.598,
+      "end": 190.52,
+      "text": "I see me standing on top of it (I see the stars in the sky)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 84,
+      "start": 190.531,
+      "end": 190.911,
+      "text": "Need two accountants",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 85,
+      "start": 191.623,
+      "end": 193.347,
+      "text": "Made a lot more than a lot of it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 86,
+      "start": 193.927,
+      "end": 195.691,
+      "text": "I'm with the fam fam",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 87,
+      "start": 196.11,
+      "end": 197.263,
+      "text": "We Batman and Robin it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 88,
+      "start": 198.474,
+      "end": 199.817,
+      "text": "Call for the game game",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 89,
+      "start": 200.538,
+      "end": 202.729,
+      "text": "No, there ain't no stopping it (We in the game now)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 90,
+      "start": 206.184,
+      "end": 257.384,
+      "text": "Thanks for watching!",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 257.322993,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Future__Tyla__Game_Time\\audio_combined.m4a",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Future__Tyla__Game_Time\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\Future__Tyla__Game_Time",
+  "title": "Game Time",
+  "artist": "Future, Tyla "
+}

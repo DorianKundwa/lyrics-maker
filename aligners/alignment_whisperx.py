@@ -82,11 +82,41 @@ _LANG_MAP = {
 }
 
 
-def _normalize_language(lang: Optional[str]) -> str:
+def _normalize_language(lang: Optional[str]) -> Optional[str]:
+    """Map a language hint string to a normalised 2-letter code, or None for auto-detect."""
     if not lang:
-        return "en"
+        return None  # None means: let WhisperX auto-detect from audio
     key = str(lang).lower()[:3]
-    return _LANG_MAP.get(key, _LANG_MAP.get(key[:2], "en"))
+    return _LANG_MAP.get(key, _LANG_MAP.get(key[:2], None))
+
+
+def _detect_language_from_text(text: str) -> Optional[str]:
+    """
+    Detect the dominant language of a block of text using langdetect.
+    Returns a 2-letter ISO code (e.g. 'en', 'zh', 'ja') or None if detection fails.
+    Handles mixed-language lyrics gracefully — if multiple languages are detected
+    we return the most probable one (langdetect already does this internally).
+    """
+    if not text or not text.strip():
+        return None
+    try:
+        from langdetect import detect  # type: ignore
+        return detect(text.strip())
+    except Exception:
+        pass
+    # Character-script heuristic fallback (no external lib needed)
+    cjk_count = sum(1 for ch in text if '\u4e00' <= ch <= '\u9fff' or
+                    '\u3040' <= ch <= '\u30ff' or
+                    '\uac00' <= ch <= '\ud7a3' or
+                    '\u0e00' <= ch <= '\u0e7f')
+    if cjk_count > len(text) * 0.1:
+        ja_count = sum(1 for ch in text if '\u3040' <= ch <= '\u30ff')
+        ko_count = sum(1 for ch in text if '\uac00' <= ch <= '\ud7a3')
+        th_count = sum(1 for ch in text if '\u0e00' <= ch <= '\u0e7f')
+        zh_count = sum(1 for ch in text if '\u4e00' <= ch <= '\u9fff')
+        return max([('ja', ja_count), ('ko', ko_count), ('th', th_count), ('zh', zh_count)],
+                   key=lambda x: x[1])[0]
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -542,7 +572,7 @@ def _heuristic_align(
     audio_path:  str,
     lyrics_path: str,
     output_json: str,
-    language:    str = "en",
+    language:    Optional[str] = None,
 ) -> str:
     try:
         dur = float(get_duration(audio_path) or 0.0)
@@ -551,6 +581,14 @@ def _heuristic_align(
 
     with open(lyrics_path, "r", encoding="utf-8") as f:
         lines = [ln.strip() for ln in f if ln.strip()]
+
+    # Auto-detect language from lyrics text if not provided
+    if not language:
+        all_text = " ".join(lines)
+        language = _detect_language_from_text(all_text) or "en"
+        print(f"[heuristic] Auto-detected language from lyrics text: {language}")
+    else:
+        language = _normalize_language(language) or "en"
 
     if dur <= 0.0:
         dur = max(1.0, len(lines) * 2.0)
@@ -600,19 +638,19 @@ def align(
         output_json = os.path.join(ALIGN_DIR, f"{base}_alignment.json")
 
     os.makedirs(os.path.dirname(os.path.abspath(output_json)), exist_ok=True)
-    lang = _normalize_language(language)
+    lang = _normalize_language(language)  # None when no hint provided = full auto-detect
 
     wav_path = _ensure_wav(audio_path)
     print(f"[whisperx] Audio:    {wav_path}")
     print(f"[whisperx] Lyrics:   {lyrics_path}")
     print(f"[whisperx] Output:   {output_json}")
-    print(f"[whisperx] Language: {lang} (char-tokenize: {_needs_char_tokenization(lang)})")
+    print(f"[whisperx] Language: {'auto-detect' if not lang else lang}")
 
     with open(lyrics_path, "r", encoding="utf-8") as f:
         lyric_lines = [ln.strip() for ln in f if ln.strip()]
 
-    # For CJK/Thai, char-level tokenization is used throughout
-    _lang_for_tokenize = lang
+    # _lang_for_tokenize will be updated to the detected language after transcription
+    _lang_for_tokenize = lang or "en"
 
     try:
         import whisperx
@@ -650,9 +688,13 @@ def align(
         except Exception:
             audio_duration = float(get_duration(wav_path) or 180.0)
 
-        print("[whisperx] Transcribing...")
-        result = model.transcribe(audio, batch_size=4, language=lang)
-        detected_lang = result.get("language", lang)
+        print("[whisperx] Transcribing (language auto-detected from audio)...")
+        # Pass lang only if we have a reliable hint; otherwise let Whisper detect freely
+        transcribe_kwargs: dict = {"batch_size": 4}
+        if lang:
+            transcribe_kwargs["language"] = lang
+        result = model.transcribe(audio, **transcribe_kwargs)
+        detected_lang = result.get("language") or lang or "en"
         print(f"[whisperx] Detected language: {detected_lang}")
 
         print(f"[whisperx] Loading alignment model ({detected_lang})...")

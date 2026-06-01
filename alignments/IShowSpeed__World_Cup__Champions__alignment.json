@@ -1,0 +1,879 @@
+{
+  "job_id": "IShowSpeed__World_Cup__Champions_",
+  "segments": [
+    {
+      "index": 0,
+      "start": 4.887,
+      "end": 5.708,
+      "text": "Ha, let's go",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 8.151,
+      "end": 8.952,
+      "text": "One moment",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 10.936,
+      "end": 12.787,
+      "text": "One dream, 'cause it's that time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 12.797,
+      "end": 13.759,
+      "text": "Let's go",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 16.402,
+      "end": 19.466,
+      "text": "Algeria, Argentina, Australia, Austria (Let's go, ha)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 19.475,
+      "end": 22.57,
+      "text": "Belgium, Bosnia, Brazil, Canada (Ay, let's go)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 22.579,
+      "end": 24.382,
+      "text": "Cape Verde, Columbia, Croatia",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 25.875,
+      "end": 29.719,
+      "text": "Czech Republic, Cura\u00e7ao, Congo (Yeah, let's go)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 29.728,
+      "end": 33.442,
+      "text": "Ecuador, Egypt, England, France (Ha, who we got like?)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 33.453,
+      "end": 36.607,
+      "text": "Germany, Ghana, Haiti, Iran (Come on, [?])",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 36.618,
+      "end": 40.093,
+      "text": "Iraq, Japan, Jordan, Mexico (Yeah, come on)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 40.103,
+      "end": 43.646,
+      "text": "Morocco, Netherlands, New Zeleand, Norway (Let's go, that's right)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 43.656,
+      "end": 46.502,
+      "text": "Panama, Paraguay, Portugal, Qatar ([?])",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 46.512,
+      "end": 50.085,
+      "text": "Saudi Arabia, Senegal, Scotland, South Africa (Let's win, ha)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 50.095,
+      "end": 52.97,
+      "text": "South Korea, Spain, Sweden, Switzerland",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 54.131,
+      "end": 55.554,
+      "text": "Tunisia, Turkey, USA, Uzb\u0435kistan",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 57.697,
+      "end": 59.298,
+      "text": "Urugway, Ivory Coast",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 60.511,
+      "end": 61.491,
+      "text": "Let's play football",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 61.542,
+      "end": 64.236,
+      "text": "Oh, ay-oh, ay-oh, ay-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 64.287,
+      "end": 68.382,
+      "text": "Let's go, we th\u0435 champions (Ha)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 73.664,
+      "end": 75.445,
+      "text": "Oh, ay-oh, ay-oh, ay-oh (Ay, i-it's the World Cup time)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 75.546,
+      "end": 76.796,
+      "text": "Let's go, we the champions (I-It's the World Cup time)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 77.487,
+      "end": 79.95,
+      "text": "'Cause this is the World Cup (World Cup)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 79.969,
+      "end": 82.393,
+      "text": "Put your flags up in the air (In the air)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 82.412,
+      "end": 84.155,
+      "text": "Put your hands up in the air (In the air)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 84.174,
+      "end": 87.597,
+      "text": "Put your flags up 'cause this is the World Cup (World Cup)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 87.608,
+      "end": 92.054,
+      "text": "Put your flags up in the air (In the air)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 92.063,
+      "end": 93.987,
+      "text": "Put your hands up in the air (In the air)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 28,
+      "start": 94.007,
+      "end": 94.819,
+      "text": "Put your flags up, leave 'em there",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 29,
+      "start": 94.828,
+      "end": 107.93,
+      "text": "Let's go (Let's go), let's fight (Let's fight)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 30,
+      "start": 107.98,
+      "end": 112.075,
+      "text": "We up (We up), tonight (Tonight)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 31,
+      "start": 112.126,
+      "end": 113.506,
+      "text": "Won't break (Won't break), that's right (That's right)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 32,
+      "start": 113.555,
+      "end": 114.206,
+      "text": "One world (One world), unite (Unite)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 33,
+      "start": 114.215,
+      "end": 136.016,
+      "text": "We own it, we going, we live for this moment",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 34,
+      "start": 136.067,
+      "end": 137.016,
+      "text": "We told 'em, we showed 'em, we told it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 35,
+      "start": 137.026,
+      "end": 137.426,
+      "text": "Oh, ay-oh, ay-oh, ay-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 36,
+      "start": 137.437,
+      "end": 138.037,
+      "text": "Let's go, we the champions (Ha)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 37,
+      "start": 138.046,
+      "end": 138.947,
+      "text": "Oh, ay-oh, ay-oh, ay-oh (I-It's the World Cup time)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 38,
+      "start": 138.956,
+      "end": 139.956,
+      "text": "Let's go, we the champions (I-It's the World Cup time)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 39,
+      "start": 139.967,
+      "end": 140.116,
+      "text": "(Na-na-na-na-na)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 40,
+      "start": 140.127,
+      "end": 140.326,
+      "text": "(Na-na-na) O-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 41,
+      "start": 140.336,
+      "end": 140.937,
+      "text": "(Na-na-na-na-na) Let's go, we the champions",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 42,
+      "start": 140.947,
+      "end": 141.146,
+      "text": "(Na-na-na) O-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 43,
+      "start": 141.157,
+      "end": 141.306,
+      "text": "(Na-na-na-na-na)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 44,
+      "start": 141.317,
+      "end": 141.516,
+      "text": "(Na-na-na) O-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 45,
+      "start": 141.526,
+      "end": 142.127,
+      "text": "(Na-na-na-na-na) Let's go, we the champions",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 46,
+      "start": 142.137,
+      "end": 142.336,
+      "text": "(Na-na-na) O-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 47,
+      "start": 142.347,
+      "end": 143.247,
+      "text": "We gonna rise till we rise to the end",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 48,
+      "start": 143.257,
+      "end": 144.157,
+      "text": "We gotta dream till we dream till we win",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 49,
+      "start": 144.167,
+      "end": 144.987,
+      "text": "Give me the cup, the championship",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 50,
+      "start": 145.048,
+      "end": 152.493,
+      "text": "Told them I'm bringing it back to the crib (Ol\u00e9, ol\u00e9)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 51,
+      "start": 152.503,
+      "end": 155.098,
+      "text": "[Todo el mundo mirando?]",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 52,
+      "start": 155.149,
+      "end": 157.144,
+      "text": "[Everybody gritando?] (Aye)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 53,
+      "start": 157.193,
+      "end": 159.188,
+      "text": "[La bola girando?]",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 54,
+      "start": 159.239,
+      "end": 161.933,
+      "text": "Uno, dos, tres, \u00a1Vamos!",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 55,
+      "start": 161.984,
+      "end": 167.479,
+      "text": "Let's go (Let's go), let's fight (Let's fight)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 56,
+      "start": 167.528,
+      "end": 168.602,
+      "text": "We up (We up), tonight (Tonight)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 57,
+      "start": 168.651,
+      "end": 169.502,
+      "text": "Won't break (Won't break), that's right (That's right)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 58,
+      "start": 169.512,
+      "end": 170.111,
+      "text": "One world (One world), unite (Unite)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 59,
+      "start": 170.122,
+      "end": 196.951,
+      "text": "We own it, we going, we live for this moment",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 60,
+      "start": 197.002,
+      "end": 197.951,
+      "text": "We told 'em, we showed 'em, we told it",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 61,
+      "start": 197.961,
+      "end": 198.361,
+      "text": "Oh, ay-oh, ay-oh, ay-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 62,
+      "start": 198.372,
+      "end": 198.972,
+      "text": "Let's go, we the champions (Ha)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 63,
+      "start": 198.981,
+      "end": 199.882,
+      "text": "Oh, ay-oh, ay-oh, ay-oh (I-it's the World Cup time)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 64,
+      "start": 199.891,
+      "end": 200.891,
+      "text": "Let's go, we the champions (I-It's the World Cup time)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 65,
+      "start": 200.901,
+      "end": 201.051,
+      "text": "(Na-na-na-na-na)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 66,
+      "start": 201.062,
+      "end": 201.262,
+      "text": "(Na-na-na) O-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 67,
+      "start": 201.271,
+      "end": 201.872,
+      "text": "(Na-na-na-na-na) Let's go, we the champions",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 68,
+      "start": 201.882,
+      "end": 202.081,
+      "text": "(Na-na-na) O-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 69,
+      "start": 202.092,
+      "end": 202.241,
+      "text": "(Na-na-na-na-na)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 70,
+      "start": 202.252,
+      "end": 202.451,
+      "text": "(Na-na-na) O-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 71,
+      "start": 202.461,
+      "end": 203.062,
+      "text": "(Na-na-na-na-na) Let's go, we the champions",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 72,
+      "start": 203.072,
+      "end": 203.271,
+      "text": "(Na-na-na) O-oh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 73,
+      "start": 203.282,
+      "end": 204.081,
+      "text": "'Cause this is the World Cup (World Cup)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 74,
+      "start": 204.092,
+      "end": 205.092,
+      "text": "Put your flags up in the air (In the air)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 75,
+      "start": 205.102,
+      "end": 206.102,
+      "text": "Put your hands up in the air (In the air)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 76,
+      "start": 206.111,
+      "end": 208.203,
+      "text": "Put your flags up 'cause this is the World Cup (World Cup)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 77,
+      "start": 208.783,
+      "end": 210.485,
+      "text": "Put your flags up in the air (In the air)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 78,
+      "start": 210.667,
+      "end": 212.348,
+      "text": "Put your hands up in the air (In the air)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 79,
+      "start": 212.61,
+      "end": 226.389,
+      "text": "Put your flags up, leave 'em there",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 80,
+      "start": 226.439,
+      "end": 226.735,
+      "text": "(Na-na-na-na-na) Ha",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 81,
+      "start": 226.784,
+      "end": 227.102,
+      "text": "(Na-na-na) 2026 baby",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 82,
+      "start": 227.111,
+      "end": 227.961,
+      "text": "(Na-na-na-na-na) It's that World Cup time",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 83,
+      "start": 227.972,
+      "end": 228.271,
+      "text": "(Na-na-na) Stand up",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 84,
+      "start": 228.282,
+      "end": 228.581,
+      "text": "(Na-na-na-na-na) Let's go",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 85,
+      "start": 228.592,
+      "end": 228.651,
+      "text": "(Na-na-na)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 86,
+      "start": 228.661,
+      "end": 229.311,
+      "text": "(Na-na-na-na-na) Let's go, we the champions",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 87,
+      "start": 229.32,
+      "end": 229.454,
+      "text": "(Na-na-na)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 88,
+      "start": 229.463,
+      "end": 229.993,
+      "text": "Let's go, we the champions",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 89,
+      "start": 235.146,
+      "end": 237.515,
+      "text": "When I step, I step with my left",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 90,
+      "start": 237.978,
+      "end": 239.241,
+      "text": "I step with my right",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 91,
+      "start": 239.663,
+      "end": 241.088,
+      "text": "I pump my chest",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 92,
+      "start": 241.43,
+      "end": 242.775,
+      "text": "I focus my mind",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 93,
+      "start": 243.176,
+      "end": 246.408,
+      "text": "I take a breath and wait for the ref",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 94,
+      "start": 246.459,
+      "end": 247.753,
+      "text": "Uh, uh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 95,
+      "start": 249.663,
+      "end": 252.408,
+      "text": "This is the World Cup, put your hands up in the air",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 96,
+      "start": 252.449,
+      "end": 255.956,
+      "text": "This is the World Cup, put the flags up in the air",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 97,
+      "start": 255.997,
+      "end": 258.781,
+      "text": "This is the World Cup, everybody come and cheer",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 98,
+      "start": 258.791,
+      "end": 262.752,
+      "text": "[Then stand up, then stand up,?] if you ain't got no fear",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 99,
+      "start": 263.494,
+      "end": 266.519,
+      "text": "This is the World Cup, this is the World Cup",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 100,
+      "start": 266.528,
+      "end": 280.565,
+      "text": "This is the World Cup, this is the World Cup",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 101,
+      "start": 280.966,
+      "end": 285.894,
+      "text": "This is the World Cup, this is the World Cup",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 102,
+      "start": 285.903,
+      "end": 286.903,
+      "text": "This is the World Cup, this is the World Cup",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 103,
+      "start": 286.913,
+      "end": 287.913,
+      "text": "This is the World Cup, this is the World Cup",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 104,
+      "start": 287.923,
+      "end": 288.923,
+      "text": "This is the World Cup, this is the World Cup",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 105,
+      "start": 288.934,
+      "end": 289.934,
+      "text": "This is the World Cup, this is the World Cup",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 106,
+      "start": 289.944,
+      "end": 290.944,
+      "text": "This is the World Cup, this is the World Cup",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 107,
+      "start": 298.24,
+      "end": 349.439,
+      "text": "Thanks for watching!",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 349.367007,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\IShowSpeed__World_Cup__Champions_\\audio_combined.m4a",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\IShowSpeed__World_Cup__Champions_\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\IShowSpeed__World_Cup__Champions_",
+  "title": "World Cup (Champions)",
+  "artist": "IShowSpeed "
+}

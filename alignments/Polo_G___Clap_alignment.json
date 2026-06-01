@@ -1,0 +1,359 @@
+{
+  "job_id": "Polo_G___Clap",
+  "segments": [
+    {
+      "index": 0,
+      "start": 0.05,
+      "end": 3.419,
+      "text": "Nuh nuh nuh, uh uh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 1,
+      "start": 3.47,
+      "end": 3.819,
+      "text": "Nuh nuh nuh, uh uh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 2,
+      "start": 3.87,
+      "end": 4.208,
+      "text": "Nuh nuh nuh, uh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 3,
+      "start": 4.217,
+      "end": 14.525,
+      "text": "A couple real niggas died, a lot of gangsters not here",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 4,
+      "start": 14.535,
+      "end": 17.489,
+      "text": "It ain't a man alive, that I could really say that I fear",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 5,
+      "start": 17.611,
+      "end": 19.885,
+      "text": "Working that graveyard shift, stuffing AR clips",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 6,
+      "start": 20.777,
+      "end": 22.989,
+      "text": "We'll turn up, who gon' tell us that it ain't our year",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 7,
+      "start": 23.0,
+      "end": 25.623,
+      "text": "I've been chosen first, couldn't see my path",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 8,
+      "start": 25.803,
+      "end": 28.608,
+      "text": "Take one of mines, do one of your soldiers worse and unleash my wrath",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 9,
+      "start": 28.847,
+      "end": 31.611,
+      "text": "No matter how many times I go through hurt, still keep my laugh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 10,
+      "start": 31.852,
+      "end": 34.375,
+      "text": "No matter how much we fall in dirt, we act like we not tribe",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 11,
+      "start": 35.055,
+      "end": 36.286,
+      "text": "Play with me I clap (Clap clap clap)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 12,
+      "start": 36.296,
+      "end": 38.46,
+      "text": "Bulletproof truck and it's tinted up, bitch I remain intact",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 13,
+      "start": 38.78,
+      "end": 41.664,
+      "text": "I done seen enough and did enough, that's why I'm laid back",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 14,
+      "start": 42.005,
+      "end": 44.667,
+      "text": "My lil bros pop out with Gens, now the opps know they can't lack",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 15,
+      "start": 44.747,
+      "end": 47.572,
+      "text": "Splash brothers they like twins, they went and caught the same hat",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 16,
+      "start": 47.591,
+      "end": 50.515,
+      "text": "It's time to flame pack, .45th clap, he got his brain snatched",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 17,
+      "start": 50.734,
+      "end": 53.578,
+      "text": "Free Trench Baby, we trench kids, bitch that's just how my gang act",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 18,
+      "start": 53.597,
+      "end": 56.701,
+      "text": "Let me introduce you to my end, where we shoot Glocks and swang craps",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 19,
+      "start": 57.121,
+      "end": 59.844,
+      "text": "I'd rather tell shit how it is, bitch I cannot debate facts (uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 20,
+      "start": 59.854,
+      "end": 62.548,
+      "text": "A couple real niggas died, a lot of gangsters not here",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 21,
+      "start": 62.688,
+      "end": 65.471,
+      "text": "It ain't a man alive, that I could really say that I fear",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 22,
+      "start": 65.572,
+      "end": 68.715,
+      "text": "Working that graveyard shift, stuffing AR clips",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 23,
+      "start": 69.055,
+      "end": 71.641,
+      "text": "We'll turn up, who gon' tell us that it ain't our year",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 24,
+      "start": 71.781,
+      "end": 73.647,
+      "text": "I been chose at first, couldn't see my path",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 25,
+      "start": 73.826,
+      "end": 76.634,
+      "text": "Take one of mines, do one of your soldiers worse and unleash my wrath",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 26,
+      "start": 76.853,
+      "end": 79.62,
+      "text": "No matter how many times I go through hurt, still keep my laugh",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 27,
+      "start": 79.881,
+      "end": 82.387,
+      "text": "No matter how much we fall in dirt, we act like we not tribe",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 28,
+      "start": 83.028,
+      "end": 84.319,
+      "text": "Play with me I clap (Clap clap clap)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 29,
+      "start": 84.371,
+      "end": 86.576,
+      "text": "Play with me I clap, I ain't know I was chosen",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 30,
+      "start": 86.736,
+      "end": 89.4,
+      "text": "I know a couple of opps, just aiming that whoof, he ain't gon' slide but trollin'",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 31,
+      "start": 89.882,
+      "end": 92.548,
+      "text": "Hell yeah I'll slide for foe'nem, you ain't do shit for the guys, you bogus",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 32,
+      "start": 92.769,
+      "end": 95.515,
+      "text": "I heard you ain't put shit on none of they books, to none of them guys you posted",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 33,
+      "start": 95.754,
+      "end": 98.421,
+      "text": "Got 33 in the stick for this .9 I'm totin', this for the side opposin'",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 34,
+      "start": 98.861,
+      "end": 101.927,
+      "text": "When it come to that bag I'm on it, you can tell that I'm having motion",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 35,
+      "start": 102.349,
+      "end": 104.793,
+      "text": "Off X my eyes was rollin', fighting back but I'm tryna focus",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 36,
+      "start": 105.094,
+      "end": 107.7,
+      "text": "We'll close his eyes for loafin', I was tought \"murder my opponents\"",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 37,
+      "start": 107.74,
+      "end": 110.668,
+      "text": "Dope and fentanyl, had the fiends hooked, now I just rap a chorus",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 38,
+      "start": 110.948,
+      "end": 113.373,
+      "text": "Want respect, revenge we slidin' for it, pistol clap performing",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 39,
+      "start": 113.816,
+      "end": 116.311,
+      "text": "All my lil' woadies on bullshit, so ain't no trying Taurus",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 40,
+      "start": 116.742,
+      "end": 119.93,
+      "text": "What you know 'bout losses, pain I took, and I just had to absorb it (uh)",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 41,
+      "start": 119.939,
+      "end": 122.346,
+      "text": "A couple real niggas died, a lot of gangsters not here",
+      "y_offset": 0,
+      "words": []
+    },
+    {
+      "index": 42,
+      "start": 122.906,
+      "end": 191.007,
+      "text": "Thanks for watching!",
+      "y_offset": 0,
+      "words": []
+    }
+  ],
+  "total_duration": 190.937007,
+  "font_name": "Edo",
+  "font_size": 72,
+  "word_highlight": true,
+  "language": "en",
+  "audio_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Polo_G___Clap\\audio_combined.m4a",
+  "bg_path": "C:\\Users\\admin\\Documents\\lyrics maker\\alignments\\Polo_G___Clap\\bg.jpg",
+  "out_dir": "C:\\Users\\admin\\Documents\\lyrics maker\\outputs\\Polo_G___Clap",
+  "title": " Clap",
+  "artist": "Polo G "
+}
