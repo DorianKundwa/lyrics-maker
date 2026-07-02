@@ -146,6 +146,28 @@
     </div>
 
     <div id="leTimelineWrap" class="le-timeline-wrap"><canvas id="leTimeline"></canvas></div>
+
+    <!-- Color options bar -->
+    <div id="leColorBar" style="display:flex; gap:16px; align-items:center; padding:10px 22px; border-bottom:1px solid var(--border); background:var(--surface); flex-wrap:wrap;">
+      <span style="color:var(--muted); font-weight:600; font-size:.72rem; letter-spacing:1.2px; text-transform:uppercase; flex-shrink:0;">Colors:</span>
+      <label style="display:flex; align-items:center; gap:7px; color:var(--muted); font-size:.8rem; cursor:pointer;">
+        <input type="color" id="leActiveColor" value="#FFFFFF"
+          style="width:34px; height:26px; border:1px solid var(--border); border-radius:5px; cursor:pointer; padding:2px; background:var(--card);">
+        🟡 Active
+      </label>
+      <label style="display:flex; align-items:center; gap:7px; color:var(--muted); font-size:.8rem; cursor:pointer;">
+        <input type="color" id="leUpcomingColor" value="#FF0000"
+          style="width:34px; height:26px; border:1px solid var(--border); border-radius:5px; cursor:pointer; padding:2px; background:var(--card);">
+        ⚪ Upcoming
+      </label>
+      <label style="display:flex; align-items:center; gap:7px; color:var(--muted); font-size:.8rem; cursor:pointer;">
+        <input type="color" id="leSungColor" value="#FFFFFF"
+          style="width:34px; height:26px; border:1px solid var(--border); border-radius:5px; cursor:pointer; padding:2px; background:var(--card);">
+        🟢 Sung
+      </label>
+      <span style="font-size:.72rem; color:var(--muted); margin-left:auto; font-style:italic;">Changes auto-save · applied on Re-render</span>
+    </div>
+
     <div class="le-timeline-hint">Drag segment to move · Drag edges to resize · Drag ↕ handle for Y-offset · Scroll to zoom</div>
 
     <div class="le-table-wrap" id="leTable"></div>

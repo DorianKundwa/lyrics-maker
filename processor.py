@@ -147,6 +147,9 @@ def generate_ass(
     font_name: str = "Arial",
     font_size: int = 72,
     word_highlight: bool = True,
+    active_color: str = "#FFFFFF",
+    upcoming_color: str = "#FF0000",
+    sung_color: str = "#FFFFFF",
 ) -> str:
     """Build an ASS subtitle file string with Karaoke tags."""
     header = f"""[Script Info]
@@ -158,8 +161,8 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font_name},{font_size},&H00FFFFFF,&H000000FF,&H00000000,&HAA000000,-1,0,0,0,100,100,2,0,1,4,3,5,60,60,0,1
-Style: Title,{font_name},42,&H00DDDDDD,&H000000FF,&H00000000,&H88000000,0,0,0,0,100,100,1,0,1,2,1,8,60,60,30,1
+Style: Default,{font_name},{font_size},{_hex_to_ass(active_color)},{_hex_to_ass(upcoming_color)},&H00000000,&HAA000000,-1,0,0,0,100,100,2,0,1,4,3,5,60,60,0,1
+Style: Title,{font_name},42,&H00DDDDDD,{_hex_to_ass(upcoming_color)},&H00000000,&H88000000,0,0,0,0,100,100,1,0,1,2,1,8,60,60,30,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -204,6 +207,15 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 def _ass_escape(text: str) -> str:
     """Minimal ASS special-char escaping."""
     return text.replace("{", "\\{").replace("}", "\\}")
+
+
+def _hex_to_ass(hex_color: str) -> str:
+    """Convert #RRGGBB (or #RGB) hex color to ASS &H00BBGGRR format."""
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"&H00{b:02X}{g:02X}{r:02X}"
 
 
 # ─── Thumbnail Generation ────────────────────────────────────────────────────
@@ -389,6 +401,10 @@ def generate_lyrics_video(
     font_name: str = "Arial",
     font_size: int = 72,
     word_highlight: bool = True,
+    language: str = "en",
+    active_color: str = "#FFFFFF",
+    upcoming_color: str = "#FF0000",
+    sung_color: str = "#FFFFFF",
 ) -> None:
     """Background image + synced lyrics subtitles + audio."""
     work_dir = Path(output_path).parent
@@ -452,7 +468,11 @@ def generate_lyrics_video(
     (work_dir / "lyrics.lrc").write_text("\n".join(lrc_lines), encoding="utf-8")
 
     # Write ASS file
-    ass_content = generate_ass(timed, title=title, artist=artist, total_duration=duration, font_name=font_name, font_size=font_size, word_highlight=word_highlight)
+    ass_content = generate_ass(
+        timed, title=title, artist=artist, total_duration=duration,
+        font_name=font_name, font_size=font_size, word_highlight=word_highlight,
+        active_color=active_color, upcoming_color=upcoming_color, sung_color=sung_color,
+    )
     ass_path = work_dir / "_lyrics.ass"
     ass_path.write_text(ass_content, encoding="utf-8")
 
@@ -495,6 +515,9 @@ def generate_ass_with_positions(
     segments: list,
     font_name: str = "Arial",
     font_size: int = 72,
+    active_color: str = "#FFFFFF",
+    upcoming_color: str = "#FF0000",
+    sung_color: str = "#FFFFFF",
 ) -> str:
     """
     Supports per-segment x_offset and y_offset.
@@ -511,7 +534,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font_name},{font_size},&H00FFFFFF,&H000000FF,&H00000000,&HAA000000,-1,0,0,0,100,100,2,0,1,4,3,5,60,60,0,1
+Style: Default,{font_name},{font_size},{_hex_to_ass(active_color)},{_hex_to_ass(upcoming_color)},&H00000000,&HAA000000,-1,0,0,0,100,100,2,0,1,4,3,5,60,60,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -544,6 +567,9 @@ def rerender_lyrics_video(
     output_path,
     font_name: str = "Arial",
     font_size: int = 72,
+    active_color: str = "#FFFFFF",
+    upcoming_color: str = "#FF0000",
+    sung_color: str = "#FFFFFF",
 ) -> None:
     """
     Re-render a lyrics video from Lyric Editor-corrected segments.
@@ -553,7 +579,10 @@ def rerender_lyrics_video(
     work_dir = Path(output_path).parent
     work_dir.mkdir(parents=True, exist_ok=True)
 
-    ass_content = generate_ass_with_positions(segments, font_name=font_name, font_size=font_size)
+    ass_content = generate_ass_with_positions(
+        segments, font_name=font_name, font_size=font_size,
+        active_color=active_color, upcoming_color=upcoming_color, sung_color=sung_color,
+    )
     ass_path    = work_dir / "_corrected.ass"
     ass_path.write_text(ass_content, encoding="utf-8")
 

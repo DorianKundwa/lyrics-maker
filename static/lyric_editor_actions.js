@@ -34,7 +34,12 @@
       const res = await fetch(`/alignment/${LE.jobId}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ segments: LE.segments }),
+        body:    JSON.stringify({
+          segments:       LE.segments,
+          active_color:   LE.activeColor   || '#FFFFFF',
+          upcoming_color: LE.upcomingColor || '#FF0000',
+          sung_color:     LE.sungColor     || '#FFFFFF',
+        }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       _setStatus('Saved ✓', 'ok');
@@ -143,7 +148,16 @@
       LE.totalDuration    = data.total_duration || 0;
       LE.fontName         = data.font_name  || 'Arial';
       LE.fontSize         = data.font_size  || 72;
+      LE.activeColor      = data.active_color   || '#FFFFFF';
+      LE.upcomingColor    = data.upcoming_color || '#FF0000';
+      LE.sungColor        = data.sung_color     || '#FFFFFF';
       LE.originalSegments = JSON.parse(JSON.stringify(LE.segments));
+
+      // Sync color pickers to loaded values
+      const _cp = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      _cp('leActiveColor',   LE.activeColor);
+      _cp('leUpcomingColor', LE.upcomingColor);
+      _cp('leSungColor',     LE.sungColor);
 
       // Register sub-module listeners fresh
       LE_Table.init();
@@ -199,6 +213,19 @@
     document.getElementById('leReset')   ?.addEventListener('click', reset);
     document.getElementById('leSave')    ?.addEventListener('click', save);
     document.getElementById('leRerender')?.addEventListener('click', rerender);
+
+    // Color picker change listeners
+    const _colorMap = {
+      leActiveColor:   v => { LE.activeColor   = v; },
+      leUpcomingColor: v => { LE.upcomingColor = v; },
+      leSungColor:     v => { LE.sungColor     = v; },
+    };
+    Object.keys(_colorMap).forEach(id => {
+      document.getElementById(id)?.addEventListener('input', e => {
+        _colorMap[id](e.target.value);
+        scheduleAutoSave();
+      });
+    });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', e => {

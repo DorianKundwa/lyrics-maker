@@ -106,6 +106,10 @@ def _save_alignment_for_editor(
     font_name: str,
     font_size: int,
     word_highlight: bool,
+    language: str = "en",
+    active_color: str = "#FFFFFF",
+    upcoming_color: str = "#FF0000",
+    sung_color: str = "#FFFFFF",
 ) -> None:
     """
     Called after a successful render (before cleanup).
@@ -149,6 +153,10 @@ def _save_alignment_for_editor(
         "font_name":      font_name,
         "font_size":      font_size,
         "word_highlight": word_highlight,
+        "language":       language,
+        "active_color":   active_color,
+        "upcoming_color": upcoming_color,
+        "sung_color":     sung_color,
         "audio_path":     str(audio_dest),
         "bg_path":        str(bg_dest),
         "out_dir":        str(out_dir),
@@ -216,6 +224,10 @@ async def start_process(
     bg_color:    str = Form("#000000"),
     stem_engine: str = Form("demucs"),
     word_highlight: bool = Form(True),
+    language:    str = Form("en"),
+    active_color:   str = Form("#FFFFFF"),
+    upcoming_color: str = Form("#FF0000"),
+    sung_color:     str = Form("#FFFFFF"),
 ):
     if artist and title:
         job_id = f"{_safe(artist, 'artist')}_{_safe(title, 'song')}"
@@ -269,7 +281,9 @@ async def start_process(
     _jobs[job_id] = {"status": "queued", "step": "", "progress": 0, "error": None}
 
     background_tasks.add_task(
-        _run_job, job_id, audio_path, lyrics_path, bg_path, outro_path, out_dir, title, artist, font_name, font_size, stem_engine, word_highlight
+        _run_job, job_id, audio_path, lyrics_path, bg_path, outro_path, out_dir,
+        title, artist, font_name, font_size, stem_engine, word_highlight, language,
+        active_color, upcoming_color, sung_color,
     )
     return {"job_id": job_id}
 
@@ -290,6 +304,10 @@ async def _run_job(
     font_size: int = 72,
     stem_engine: str = "demucs",
     word_highlight: bool = True,
+    language: str = "en",
+    active_color: str = "#FFFFFF",
+    upcoming_color: str = "#FF0000",
+    sung_color: str = "#FFFFFF",
 ):
     async with _semaphore:
         job = _jobs[job_id]
@@ -330,7 +348,8 @@ async def _run_job(
         lv_path = out_dir / "lyrics_video.mp4"
         await run(
             proc.generate_lyrics_video,
-            bg_path, audio_path, vocals_path, lyrics_path, lv_path, outro_path, title, artist, font_name, font_size, word_highlight
+            bg_path, audio_path, vocals_path, lyrics_path, lv_path, outro_path, title, artist, font_name, font_size, word_highlight, language,
+            active_color, upcoming_color, sung_color,
         )
 
         job.update(
@@ -348,7 +367,8 @@ async def _run_job(
         try:
             _save_alignment_for_editor(
                 job_id, audio_path, bg_path, out_dir,
-                title, artist, font_name, font_size, word_highlight,
+                title, artist, font_name, font_size, word_highlight, language,
+                active_color, upcoming_color, sung_color,
             )
             _save_jobs_store()
         except Exception:
@@ -456,7 +476,7 @@ def get_alignment_audio(job_id: str):
 
 @app.patch("/alignment/{job_id}")
 async def patch_alignment(job_id: str, request: Request):
-    """Save editor-corrected segments. Body: {segments: [...]}."""
+    """Save editor-corrected segments. Body: {segments: [...], active_color?, upcoming_color?, sung_color?}."""
     original = ALIGN_DIR / f"{job_id}_alignment.json"
     if not original.exists():
         return JSONResponse({"error": "Original alignment not found"}, status_code=404)
@@ -465,6 +485,10 @@ async def patch_alignment(job_id: str, request: Request):
         segments = body.get("segments", [])
         base     = json.loads(original.read_text(encoding="utf-8"))
         base["segments"] = segments
+        # Persist any color overrides sent from the editor
+        for key in ("active_color", "upcoming_color", "sung_color"):
+            if key in body:
+                base[key] = body[key]
         corrected = ALIGN_DIR / f"{job_id}_alignment_corrected.json"
         corrected.write_text(json.dumps(base, indent=2), encoding="utf-8")
         _save_jobs_store()
@@ -523,13 +547,16 @@ async def _run_rerender(rerender_id: str, align_data: dict) -> None:
         return loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
     try:
-        job.update(status="running", step="Preparing…", progress=10)
-        segments    = align_data["segments"]
-        out_dir     = Path(align_data["out_dir"])
-        bg_path     = align_data["bg_path"]
-        audio_path  = align_data["audio_path"]
-        font_name   = align_data.get("font_name", "Arial")
-        font_size   = align_data.get("font_size", 72)
+        job.update(status="running", step="Rendering corrected lyrics video…", progress=10)
+        segments       = align_data["segments"]
+        out_dir        = Path(align_data["out_dir"])
+        bg_path        = align_data["bg_path"]
+        audio_path     = align_data["audio_path"]
+        font_name      = align_data.get("font_name",      "Arial")
+        font_size      = align_data.get("font_size",      72)
+        active_color   = align_data.get("active_color",   "#FFFFFF")
+        upcoming_color = align_data.get("upcoming_color", "#FF0000")
+        sung_color     = align_data.get("sung_color",     "#FFFFFF")
         out_dir.mkdir(parents=True, exist_ok=True)
         output_path = out_dir / "lyrics_video_corrected.mp4"
 
@@ -537,6 +564,7 @@ async def _run_rerender(rerender_id: str, align_data: dict) -> None:
         await run(
             proc.rerender_lyrics_video,
             bg_path, audio_path, segments, output_path, font_name, font_size,
+            active_color, upcoming_color, sung_color,
         )
 
         job.update(

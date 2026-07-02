@@ -560,6 +560,29 @@
       </div>
     </div>
 
+    <!-- Step 5: Lyric Colors -->
+    <div class="section-label" style="margin-top:28px"><span class="num">5</span> Lyric Colors</div>
+    <div class="meta-row" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 16px;">
+      <div class="field-group">
+        <label for="active_color">🟡 Active Word Color</label>
+        <input type="color" id="active_color" name="active_color" value="#FFFFFF"
+          style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:4px 8px; height:45px; width:100%; cursor:pointer;">
+        <span style="font-size:.72rem; color:var(--muted);">Currently highlighted word</span>
+      </div>
+      <div class="field-group">
+        <label for="upcoming_color">⚪ Upcoming Color</label>
+        <input type="color" id="upcoming_color" name="upcoming_color" value="#FF0000"
+          style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:4px 8px; height:45px; width:100%; cursor:pointer;">
+        <span style="font-size:.72rem; color:var(--muted);">Words not yet reached</span>
+      </div>
+      <div class="field-group">
+        <label for="sung_color">🟢 Sung Color</label>
+        <input type="color" id="sung_color" name="sung_color" value="#FFFFFF"
+          style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:4px 8px; height:45px; width:100%; cursor:pointer;">
+        <span style="font-size:.72rem; color:var(--muted);">Already sung words</span>
+      </div>
+    </div>
+
     <!-- LRC hint -->
     <div class="lrc-hint">
       <strong style="color:var(--text)">Lyrics format:</strong>
