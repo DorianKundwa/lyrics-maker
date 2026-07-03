@@ -664,13 +664,46 @@ def align(
         import inspect
         import functools
 
-        # --- FIX: PyTorch 2.6+ & SpeechBrain Compatibility ---
-        # 1. Globally disable weights_only=True to allow Pyannote VAD to load properly
-        _old_load = torch.load
-        _new_load = lambda *a, **kw: _old_load(*a, **{**kw, 'weights_only': False})
-        torch.load = _new_load
-        torch.serialization.load = _new_load
-        
+        # --- FIX: PyTorch 2.6+ & Pyannote/SpeechBrain Compatibility ---
+        # PyTorch 2.6 changed torch.load default to weights_only=True, which
+        # breaks Pyannote VAD checkpoint loading (uses omegaconf objects).
+        # Strategy 1: Register omegaconf types as safe globals (clean approach)
+        try:
+            import omegaconf
+            import torch.serialization as _ts
+            _safe = [
+                omegaconf.listconfig.ListConfig,
+                omegaconf.dictconfig.DictConfig,
+            ]
+            if hasattr(_ts, 'add_safe_globals'):
+                _ts.add_safe_globals(_safe)
+        except Exception:
+            pass
+
+        # Strategy 2: Monkey-patch torch.load to force weights_only=False
+        # (fallback for when safe_globals alone isn't enough)
+        _orig_torch_load = torch.load
+        def _patched_load(*args, **kwargs):
+            kwargs['weights_only'] = False
+            return _orig_torch_load(*args, **kwargs)
+        torch.load = _patched_load
+        # Also patch internal serialization entry point used by lightning_fabric
+        if hasattr(torch.serialization, 'load'):
+            torch.serialization.load = _patched_load
+
+        # Strategy 3: Patch lightning_fabric's own reference (resolves at import time)
+        try:
+            import lightning_fabric.utilities.cloud_io as _lfcio
+            if hasattr(_lfcio, '_load'):
+                def _patched_lf_load(path_or_url, map_location=None, **kwargs):
+                    # Ignore 'weights_only' kwarg from pytorch_lightning — always use False
+                    return _orig_torch_load(path_or_url, map_location=map_location, weights_only=False)
+                _lfcio._load = _patched_lf_load
+                print('[OK] lightning_fabric._load patched')
+        except Exception:
+            pass
+        # ---------------------------------------------------------------
+
         # 2. Mock inspect.stack() during model load to prevent SpeechBrain from crashing
         # due to its importutils lazy-loading bug being triggered by pytorch_lightning's is_scripting check.
         _orig_stack = inspect.stack
@@ -682,10 +715,10 @@ def align(
 
         print("[whisperx] Loading ASR model (small)...")
         model = whisperx.load_model("small", device=device, compute_type=compute_type)
-        
-        # Restore normal inspect.stack() functionality
+
+        # Restore inspect.stack
         inspect.stack = _orig_stack
-        # -----------------------------------------------------
+        # ---------------------------------------------------------------
 
         audio = whisperx.load_audio(wav_path)
 
