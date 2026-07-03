@@ -653,6 +653,12 @@ def align(
     _lang_for_tokenize = lang or "en"
 
     try:
+        import os as _os
+        # Fix: TensorFlow's generated protobuf code is incompatible with
+        # protobuf >= 3.21. Setting this env var forces pure-Python parsing,
+        # which is slower but fully compatible. Must be set BEFORE importing.
+        _os.environ.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
+
         import whisperx
         import torch
         import inspect
