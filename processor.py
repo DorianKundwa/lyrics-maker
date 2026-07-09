@@ -271,70 +271,115 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         else:
             text_body = _ass_escape(item.get("text", ""))
 
-        # ── Style-specific prefix override tags ───────────────────────────
-        if lyric_style == "cinematic":
-            prefix = r"\move(960,590,960,540,0,400)\fad(350,500)\blur2"
+        # ── Per-style intro + outro tags (single-line emit styles only) ──────────
+        is_last = (i == len(timed_lyrics) - 1)
+        dur_ms  = max(1, int((end - start) * 1000))  # event duration in ms
+
+        if lyric_style == "classic":
+            # Intro: gentle 15px upward drift + 200ms fade-in
+            # Outro: hold position, 350ms fade-out
+            prefix = r"\move(960,555,960,540,0,400)\fad(200,350)"
+
+        elif lyric_style == "karaoke_bar":
+            # Intro: entire bar rises from below the frame (no fade, mechanical)
+            # Outro: bar slides back down off-screen (no fade, clean cut)
+            intro_ms = 300
+            outro_ms = 250
+            # We simulate a slide-out by moving from rest to off-screen in the last outro_ms
+            # ASS \move only does one motion, so we use:
+            #   t1=0, t2=intro_ms  → slides up into position
+            #   t1=dur_ms-outro_ms, t2=dur_ms → slides back down
+            # Achieved by stacking \move with the longer span covering both
+            # For libass: \move(x1,y1,x2,y2) keeps x2,y2 after t2. So we only get entry.
+            # Best achievable: entry slide, hold, fade-out exit
+            prefix = rf"\move(960,1120,960,1020,0,{intro_ms})\fad(0,{outro_ms})"
+
+        elif lyric_style == "cinematic":
+            # Intro: blurry text slides up + blur dissolves to sharp (400ms fade-in)
+            # Outro: text continues floating upward slowly, 600ms fade-out
+            # Long \move keeps text drifting throughout the event
+            prefix = r"\move(960,600,960,470,0,8000)\fad(400,600)\blur5\t(0,500,\blur0)"
+
+        elif lyric_style == "minimal":
+            # Intro: 400ms whisper fade-in, no movement
+            # Outro: 700ms slow dissolve — barely there, barely gone
+            prefix = r"\fad(400,700)"
+
+        elif lyric_style == "bold":
+            # Intro: instant appear at 115%, snap to 100% in 80ms ("POP!")
+            # Outro: hold at 100%, snap vanish (100ms hard cut fade)
+            prefix = r"\fscx115\fscy115\t(0,80,\fscx100\fscy100)\fad(0,100)"
+
         else:
-            prefix = sc["tags"] or r"\fad(150,300)"
+            # neon and multi-line styles handled separately below
+            prefix = sc.get("tags") or r"\fad(150,300)"
 
         line_text = f"{{{prefix}}}{text_body}"
 
         # ── Emit dialogue line(s) ─────────────────────────────────────────
         if sc["neon"]:
-            # Layer 0: blurred colored glow (plain text, no karaoke tags)
-            plain  = _ass_escape(item.get("text", ""))
-            glow   = f"{{\\blur14\\1c{neon_glow_col}\\fad(200,400)}}{plain}"
+            # ── NEON: pulsing glow layer + crisp text layer ─────────────────────
+            plain = _ass_escape(item.get("text", ""))
+            # Layer 0 — glow: fades in, blur pulses (12→22→14), then fades out
+            glow = (
+                f"{{\\blur12\\1c{neon_glow_col}"
+                f"\\t(0,700,\\blur22)\\t(700,1400,\\blur14)"
+                f"\\fad(350,500)}}{plain}"
+            )
             lines.append(
                 f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                 f"Default,,0,0,0,,{glow}"
             )
-            # Layer 1: sharp foreground text (karaoke or plain)
-            sharp  = f"{{\\blur0\\fad(200,400)}}{text_body}"
+            # Layer 1 — sharp text: fades in (350ms) and out (500ms), no blur
+            sharp = f"{{\\blur0\\fad(350,500)}}{text_body}"
             lines.append(
                 f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                 f"Default,,0,0,0,,{sharp}"
             )
 
         elif multi_mode == "two":
-            # ── Two-line: scroll up — no fad on context lines ──────────────
+            # ── TWO-LINE: scroll up; graceful fade-out on last line ─────────────
             cur_y = 470
             tr_ms = 250
 
             if i == 0:
-                # First slot: both lines fade into position
-                t_cur = rf"\pos(960,{cur_y})\fad(350,200)"
+                # First line: both fade into position
+                t_cur = rf"\pos(960,{cur_y})\fad(300,0)"
                 lines.append(
                     f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                     f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
                 )
                 if 1 < len(timed_lyrics):
                     nxt   = _ass_escape(timed_lyrics[1]["text"])
-                    t_nxt = rf"\pos(960,{cur_y + spacing})\fad(350,200)\1c{second_col}\alpha&H55&"
+                    t_nxt = rf"\pos(960,{cur_y + spacing})\fad(300,0)\1c{second_col}\alpha&H55&"
                     lines.append(
                         f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                         f"Default,,0,0,0,,{{{t_nxt}}}{nxt}"
                     )
+            elif is_last:
+                # Last line: slides up into position, then fades out gracefully
+                t_cur = rf"\move(960,{cur_y + spacing},960,{cur_y},0,{tr_ms})\alpha&H55&\t(0,{tr_ms},\alpha&H00&)\fad(0,450)"
+                lines.append(
+                    f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                    f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
+                )
             else:
-                # Current: slides up from next-slot position and brightens
+                # Middle lines: current slides up and brightens
                 t_cur = rf"\move(960,{cur_y + spacing},960,{cur_y},0,{tr_ms})\alpha&H55&\t(0,{tr_ms},\alpha&H00&)"
                 lines.append(
                     f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                     f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
                 )
-                # Next: slides in from below and settles to dim
-                if i + 1 < len(timed_lyrics):
-                    nxt   = _ass_escape(timed_lyrics[i + 1]["text"])
-                    t_nxt = rf"\move(960,{cur_y + 2*spacing},960,{cur_y + spacing},0,{tr_ms})\1c{second_col}\alpha&HBB&\t(0,{tr_ms},\alpha&H55&)"
-                    lines.append(
-                        f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-                        f"Default,,0,0,0,,{{{t_nxt}}}{nxt}"
-                    )
+                # Next line slides in from below
+                nxt   = _ass_escape(timed_lyrics[i + 1]["text"])
+                t_nxt = rf"\move(960,{cur_y + 2*spacing},960,{cur_y + spacing},0,{tr_ms})\1c{second_col}\alpha&HBB&\t(0,{tr_ms},\alpha&H55&)"
+                lines.append(
+                    f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                    f"Default,,0,0,0,,{{{t_nxt}}}{nxt}"
+                )
 
         elif multi_mode == "full":
-            # ── Full lyrics: true teleprompter scroll — every line \move()s up ──
-            # Slots:  past(slot 0)  |  cur(slot 1)  |  next(slot 2)  |  far(slot 3)
-            # y_this = cur_y + (slot_idx - 1) * spacing
-            # y_from = y_this + spacing   (where the line sat in the previous slot)
+            # ── FULL LYRICS: teleprompter scroll; graceful start + last-line fade ──
             cur_y  = 490
             tr_ms  = 250
             window = [(i - 1, "past"), (i, "cur"), (i + 1, "next"), (i + 2, "far")]
@@ -343,37 +388,37 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 if idx < 0 or idx >= len(timed_lyrics):
                     continue
                 y_this = cur_y + (slot_idx - 1) * spacing
-                y_from = y_this + spacing      # one slot below = previous position
+                y_from = y_this + spacing
                 entry  = timed_lyrics[idx]
                 layer  = 1 if role == "cur" else 0
 
                 if role == "cur":
                     body = text_body
                     if i == 0:
-                        tags = rf"\pos(960,{y_this})\fad(400,150)"
+                        # First line fades in from position
+                        tags = rf"\pos(960,{y_this})\fad(400,0)"
+                    elif is_last:
+                        # Last line scrolls in then fades out gracefully
+                        tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\alpha&H55&\t(0,{tr_ms},\alpha&H00&)\fad(0,500)"
                     else:
-                        # Was "next" → slides up into center, brightens from dim
                         tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\alpha&H55&\t(0,{tr_ms},\alpha&H00&)"
 
                 elif role == "past":
                     body = _ass_escape(entry["text"])
-                    # Was "cur" → slides up, dims to sung color
                     tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\1c{sung_col}\t(0,{tr_ms},\alpha&H88&)"
 
                 elif role == "next":
                     body = _ass_escape(entry["text"])
                     if i == 0:
-                        tags = rf"\pos(960,{y_this})\fad(400,150)\1c{second_col}\alpha&H55&"
+                        tags = rf"\pos(960,{y_this})\fad(400,0)\1c{second_col}\alpha&H55&"
                     else:
-                        # Was "far" → slides up, brightens slightly
                         tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\1c{second_col}\alpha&H99&\t(0,{tr_ms},\alpha&H55&)"
 
                 else:  # far
                     body = _ass_escape(entry["text"])
                     if i == 0:
-                        tags = rf"\pos(960,{y_this})\fad(400,150)\1c{second_col}\alpha&H99&"
+                        tags = rf"\pos(960,{y_this})\fad(400,0)\1c{second_col}\alpha&H99&"
                     else:
-                        # Enters from below (wasn't visible in previous slot)
                         tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\1c{second_col}\alpha&HCC&\t(0,{tr_ms},\alpha&H99&)"
 
                 lines.append(
