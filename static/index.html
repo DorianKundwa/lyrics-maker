@@ -517,6 +517,26 @@
     50%      { text-shadow:0 0 10px var(--accent),0 0 28px var(--accent),0 0 52px var(--accent); }
   }
 
+  /* Two-line */
+  .sp-two-line { flex-direction:column; gap:8px; }
+  .sp-two-line .sp-cur .sp-text {
+    font-size:1rem;
+    color:#fff;
+    text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
+  }
+  .sp-two-line .sp-next .sp-text {
+    font-size:1rem; font-weight:400;
+    color:rgba(255,100,100,0.6);
+  }
+
+  /* Full lyrics */
+  .sp-full-lyrics { flex-direction:column; gap:3px; padding:8px 0; }
+  .sp-fl-line { font-size:0.65rem; text-align:center; letter-spacing:.5px; color:#fff; padding:0 10px; }
+  .sp-fl-past { opacity:.38; }
+  .sp-fl-cur  { opacity:1; font-weight:700; color:var(--accent); font-size:.72rem; }
+  .sp-fl-next { opacity:.55; }
+  .sp-fl-far  { opacity:.28; font-size:.6rem; }
+
   /* ── Responsive ── */
   @media (max-width: 640px) {
     .style-cards { grid-template-columns: 1fr 1fr; }
@@ -726,6 +746,32 @@
         <div class="style-info">
           <div class="style-name">Neon Glow</div>
           <div class="style-desc">Colored halo glow, dual layer</div>
+        </div>
+      </label>
+
+      <label class="style-card" id="sc-two_line">
+        <input type="radio" name="lyric_style" value="two_line">
+        <div class="style-preview sp-two-line">
+          <div class="sp-cur"><span class="sp-text">Current Line</span></div>
+          <div class="sp-next"><span class="sp-text">Next Line</span></div>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Two-Line</div>
+          <div class="style-desc">Current + next line always visible</div>
+        </div>
+      </label>
+
+      <label class="style-card" id="sc-full_lyrics">
+        <input type="radio" name="lyric_style" value="full_lyrics">
+        <div class="style-preview sp-full-lyrics">
+          <div class="sp-fl-line sp-fl-past">Previous line</div>
+          <div class="sp-fl-line sp-fl-cur">&#9654; Current Line</div>
+          <div class="sp-fl-line sp-fl-next">Next line here</div>
+          <div class="sp-fl-line sp-fl-far">Further ahead</div>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Full Lyrics</div>
+          <div class="style-desc">Rolling 4-line teleprompter view</div>
         </div>
       </label>
 

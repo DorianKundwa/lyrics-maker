@@ -186,6 +186,22 @@ _LYRIC_STYLES: dict[str, dict] = {
         "tags": r"\fad(200,400)",
         "font_scale": 1.0, "neon": True,  # two dialogue layers per line
     },
+    "two_line": {
+        "bold": -1, "italic": 0, "border_style": 1,
+        "outline": 3, "shadow": 2, "alignment": 5,
+        "margin_l": 60, "margin_r": 60, "margin_v": 0,
+        "back_colour": "&HAA000000",
+        "tags": None,  # custom multi-line layout
+        "font_scale": 0.85, "neon": False, "multi_line": "two",
+    },
+    "full_lyrics": {
+        "bold": 0, "italic": 0, "border_style": 1,
+        "outline": 2, "shadow": 2, "alignment": 5,
+        "margin_l": 60, "margin_r": 60, "margin_v": 0,
+        "back_colour": "&HAA000000",
+        "tags": None,  # custom multi-line layout
+        "font_scale": 0.70, "neon": False, "multi_line": "full",
+    },
 }
 
 
@@ -207,8 +223,11 @@ def generate_ass(
     eff_size    = max(10, int(font_size * sc["font_scale"]))
     primary_col = _hex_to_ass(active_color)
     second_col  = _hex_to_ass(upcoming_color)
+    sung_col    = _hex_to_ass(sung_color)
     outline_col = "&H00000000"
     back_col    = sc["back_colour"]
+    # Line spacing for multi-line styles (based on effective font size)
+    spacing     = max(70, int(eff_size * 1.35))
 
     header = f"""[Script Info]
 ScriptType: v4.00+
@@ -226,9 +245,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     lines  = [header]
     # Glow colour for neon layer = upcoming/accent color
-    neon_glow_col = second_col
+    neon_glow_col  = second_col
+    multi_mode     = sc.get("multi_line", None)
 
-    for item in timed_lyrics:
+    for i, item in enumerate(timed_lyrics):
         start = item["start"]
         end   = item["end"]
         words = item.get("words", [])
@@ -274,6 +294,57 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                 f"Default,,0,0,0,,{sharp}"
             )
+
+        elif multi_mode == "two":
+            # ── Two-line: current line (bright) + next line (dim) ─────────
+            cur_y  = 470
+            next_y = cur_y + spacing
+            # Current line
+            cur_tags = rf"\pos(960,{cur_y})\fad(150,300)"
+            lines.append(
+                f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                f"Default,,0,0,0,,{{{cur_tags}}}{text_body}"
+            )
+            # Next line (dimmed, plain text)
+            if i + 1 < len(timed_lyrics):
+                next_text = _ass_escape(timed_lyrics[i + 1]["text"])
+                nxt_tags = rf"\pos(960,{next_y})\fad(150,300)\1c{second_col}\alpha&H55&"
+                lines.append(
+                    f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                    f"Default,,0,0,0,,{{{nxt_tags}}}{next_text}"
+                )
+
+        elif multi_mode == "full":
+            # ── Full lyrics: rolling 4-line window centered on current ─────
+            # Slots: past(-1), current(0), next(+1), far(+2)
+            cur_y   = 490
+            window  = [(i - 1, "past"), (i, "cur"), (i + 1, "next"), (i + 2, "far")]
+            for slot, (idx, role) in enumerate(window):
+                if idx < 0 or idx >= len(timed_lyrics):
+                    continue
+                y = cur_y + (slot - 1) * spacing
+                entry = timed_lyrics[idx]
+                if role == "cur":
+                    body  = text_body
+                    tags  = rf"\pos(960,{y})\fad(200,300)"
+                    layer = 1
+                elif role == "past":
+                    body  = _ass_escape(entry["text"])
+                    tags  = rf"\pos(960,{y})\fad(200,300)\1c{sung_col}\alpha&H88&"
+                    layer = 0
+                elif role == "next":
+                    body  = _ass_escape(entry["text"])
+                    tags  = rf"\pos(960,{y})\fad(200,300)\1c{second_col}\alpha&H55&"
+                    layer = 0
+                else:  # far
+                    body  = _ass_escape(entry["text"])
+                    tags  = rf"\pos(960,{y})\fad(200,300)\1c{second_col}\alpha&H99&"
+                    layer = 0
+                lines.append(
+                    f"Dialogue: {layer},{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                    f"Default,,0,0,0,,{{{tags}}}{body}"
+                )
+
         else:
             lines.append(
                 f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
