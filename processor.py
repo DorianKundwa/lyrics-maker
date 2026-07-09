@@ -286,69 +286,95 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         is_last  = (i == len(timed_lyrics) - 1)
 
         if lyric_style == "classic":
-            # Middle lines: upward drift only, NO fade-in/out — back-to-back
-            # events at full opacity create a clean seamless boundary.
-            # Only the very first line fades in and the very last line fades out.
+            # CLASSIC KARAOKE — Static centre position for all lines.
+            # Only the very first line fades+drifts in; last line fades out.
+            # Middle lines just appear/disappear instantly so words highlight
+            # seamlessly from one line to the next with no visual bump.
             if is_first:
-                prefix = r"\move(960,555,960,540,0,400)\fad(250,0)"
+                prefix = r"\move(960,555,960,540,0,500)\fad(300,0)"
             elif is_last:
-                prefix = r"\move(960,555,960,540,0,400)\fad(0,400)"
+                prefix = r"\pos(960,540)\fad(0,400)"
             else:
-                prefix = r"\move(960,555,960,540,0,400)"  # drift only, no fad
+                prefix = r"\pos(960,540)"  # snap to position — no drift, no fade
 
         elif lyric_style == "karaoke_bar":
-            # Bar slides up from off-screen on EVERY line — zero fade,
-            # pure mechanical feel (like a real karaoke machine).
-            prefix = r"\move(960,1120,960,1020,0,300)"
+            # KARAOKE BAR — Mimics a real karaoke machine.
+            # The bar slides up from off-screen ONLY on the very first lyric.
+            # All subsequent lines just appear at rest so the bar feels
+            # persistent (text changes in place, no bouncing).
+            # The bar disappears on the last lyric with a quick fade-down.
+            if is_first:
+                prefix = r"\move(960,1120,960,1020,0,350)"   # slide up once
+            elif is_last:
+                prefix = r"\pos(960,1020)\fad(0,200)"        # appear then fade out
+            else:
+                prefix = r"\pos(960,1020)"                   # appear in-place
 
         elif lyric_style == "cinematic":
-            # Every line drifts up and dissolves — the fade IS the cinematic look.
+            # CINEMATIC — Every line is its own dramatic 'scene'.
+            # Text floats up slowly (blur-to-sharp entry) and dissolves.
+            # The float IS the style — each line drifts throughout its lifetime.
             if is_first:
-                prefix = r"\move(960,600,960,470,0,8000)\fad(600,600)\blur5\t(0,500,\blur0)"
+                # Longer fade-in for the opening scene
+                prefix = r"\move(960,610,960,460,0,9000)\fad(700,650)\blur6\t(0,600,\blur0)"
             elif is_last:
-                prefix = r"\move(960,600,960,470,0,8000)\fad(400,900)\blur5\t(0,500,\blur0)"
+                # Longer fade-out — the final scene lingers
+                prefix = r"\move(960,610,960,460,0,9000)\fad(450,1000)\blur6\t(0,600,\blur0)"
             else:
-                prefix = r"\move(960,600,960,470,0,8000)\fad(400,600)\blur5\t(0,500,\blur0)"
+                prefix = r"\move(960,610,960,460,0,9000)\fad(450,650)\blur6\t(0,600,\blur0)"
 
         elif lyric_style == "minimal":
-            # Every line softly crossfades — gentle fade IS the minimal aesthetic.
+            # MINIMAL — Understated. Pure soft crossfade, no movement.
+            # Text stays perfectly still; only opacity transitions.
+            # First line opens gently; last line lingers and dissolves.
             if is_first:
-                prefix = r"\fad(600,500)"
+                prefix = r"\pos(960,900)\fad(700,500)"
             elif is_last:
-                prefix = r"\fad(400,900)"
+                prefix = r"\pos(960,900)\fad(400,1000)"
             else:
-                prefix = r"\fad(400,700)"
+                prefix = r"\pos(960,900)\fad(400,650)"
 
         elif lyric_style == "bold":
-            # ZERO fade. Scale-bounce entry, instant vanish. No fade whatsoever.
-            prefix = r"\fscx115\fscy115\t(0,80,\fscx100\fscy100)"
+            # BOLD POP — Aggressive instant snap on EVERY line.
+            # Slides in from slightly left + scale-bounce (115%→100%) in 80ms.
+            # Zero fade in or out — pure hard cut on every transition.
+            prefix = r"\move(900,540,960,540,0,80)\fscx115\fscy115\t(0,80,\fscx100\fscy100)"
 
         else:
-            # neon and multi-line styles handled separately below
+            # neon and multi-line styles handled in emit blocks below
             prefix = sc.get("tags") or r"\fad(150,300)"
+
 
         line_text = f"{{{prefix}}}{text_body}"
 
         # ── Emit dialogue line(s) ─────────────────────────────────────────
         if sc["neon"]:
-            # ── NEON: pulsing glow layer + crisp text layer ─────────────────────
-            plain = _ass_escape(item.get("text", ""))
-            # Layer 0 — glow: fades in, blur pulses (12→22→14), then fades out
+            # ── NEON: pulsing glow layer (accent colour) + crisp karaoke layer ─────
+            plain = _ass_escape(item.get("text", ""))  # plain text for glow
+            # Fade timing: first line longer intro, last line longer outro
+            if is_first:
+                fad_tag = r"\fad(500,600)"
+            elif is_last:
+                fad_tag = r"\fad(350,800)"
+            else:
+                fad_tag = r"\fad(350,550)"
+            # Layer 0 — glow: accent-coloured blur that pulses then fades
             glow = (
-                f"{{\\blur12\\1c{neon_glow_col}"
-                f"\\t(0,700,\\blur22)\\t(700,1400,\\blur14)"
-                f"\\fad(350,500)}}{plain}"
+                f"{{\\blur14\\1c{neon_glow_col}"
+                f"\\t(0,800,\\blur24)\\t(800,1600,\\blur16)"
+                f"{fad_tag}}}{plain}"
             )
             lines.append(
                 f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                 f"Default,,0,0,0,,{glow}"
             )
-            # Layer 1 — sharp text: fades in (350ms) and out (500ms), no blur
-            sharp = f"{{\\blur0\\fad(350,500)}}{text_body}"
+            # Layer 1 — sharp karaoke text: word highlighting + fade
+            sharp = f"{{\\blur0{fad_tag}}}{text_body}"
             lines.append(
                 f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                 f"Default,,0,0,0,,{sharp}"
             )
+
 
         elif multi_mode == "two":
             # ── TWO-LINE: scroll up; graceful fade-out on last line ─────────────
