@@ -238,7 +238,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font_name},{eff_size},{primary_col},{primary_col},{outline_col},{back_col},{sc["bold"]},{sc["italic"]},0,0,100,100,2,0,{sc["border_style"]},{sc["outline"]},{sc["shadow"]},{sc["alignment"]},{sc["margin_l"]},{sc["margin_r"]},{sc["margin_v"]},1
+Style: Default,{font_name},{eff_size},{primary_col},{second_col},{outline_col},{back_col},{sc["bold"]},{sc["italic"]},0,0,100,100,2,0,{sc["border_style"]},{sc["outline"]},{sc["shadow"]},{sc["alignment"]},{sc["margin_l"]},{sc["margin_r"]},{sc["margin_v"]},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -251,16 +251,21 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     for i, item in enumerate(timed_lyrics):
         start = item["start"]
         end   = item["end"]
+        # For teleprompter styles: extend end to next event start to fill gaps
+        # so the screen never goes blank between alignment segments.
+        if multi_mode and i + 1 < len(timed_lyrics):
+            next_start = timed_lyrics[i + 1]["start"]
+            if next_start > end:
+                end = next_start
+
         words = item.get("words", [])
 
         # ── Build karaoke or plain text body ──────────────────────────────────
         if words and word_highlight:
-            # Use \K (fill-wipe) + explicit \1c colour tags so ALL words are
-            # visible at full opacity from the start (in upcoming_color).
-            # As each word is sung it wipes to active_color.
-            # This removes the SecondaryColour dim-start that caused the
-            # apparent "fade-in" on every line.
-            parts = [f"{{\\1c{second_col}}}"]   # whole line starts in upcoming colour
+            # \k: simple instant colour-swap per syllable.
+            # SecondaryColour (upcoming_color) = un-sung text colour.
+            # PrimaryColour  (active_color)    = sung text colour.
+            karaoke_text = ""
             current_time = start
             for w in words:
                 w_start = w["start"]
@@ -268,12 +273,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 if w_start > current_time:
                     gap_cs = int((w_start - current_time) * 100)
                     if gap_cs > 0:
-                        parts.append(f"{{\\K{gap_cs}}}")   # silent gap (no colour change)
+                        karaoke_text += f"{{\\k{gap_cs}}}"
                 duration_cs = int(max(0, w_end - w_start) * 100)
-                # \K wipes the word from upcoming→active colour as it's sung
-                parts.append(f"{{\\K{duration_cs}\\1c{primary_col}}}{_ass_escape(w['text'])} ")
+                karaoke_text += f"{{\\k{duration_cs}}}{_ass_escape(w['text'])} "
                 current_time = w_end
-            text_body = "".join(parts).rstrip()
+            text_body = karaoke_text.strip()
         else:
             text_body = _ass_escape(item.get("text", ""))
 
