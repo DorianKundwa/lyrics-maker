@@ -296,50 +296,86 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             )
 
         elif multi_mode == "two":
-            # ── Two-line: current line (bright) + next line (dim) ─────────
-            cur_y  = 470
-            next_y = cur_y + spacing
-            # Current line
-            cur_tags = rf"\pos(960,{cur_y})\fad(150,300)"
-            lines.append(
-                f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-                f"Default,,0,0,0,,{{{cur_tags}}}{text_body}"
-            )
-            # Next line (dimmed, plain text)
-            if i + 1 < len(timed_lyrics):
-                next_text = _ass_escape(timed_lyrics[i + 1]["text"])
-                nxt_tags = rf"\pos(960,{next_y})\fad(150,300)\1c{second_col}\alpha&H55&"
+            # ── Two-line: scroll up — no fad on context lines ──────────────
+            cur_y = 470
+            tr_ms = 250
+
+            if i == 0:
+                # First slot: both lines fade into position
+                t_cur = rf"\pos(960,{cur_y})\fad(350,200)"
                 lines.append(
-                    f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-                    f"Default,,0,0,0,,{{{nxt_tags}}}{next_text}"
+                    f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                    f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
                 )
+                if 1 < len(timed_lyrics):
+                    nxt   = _ass_escape(timed_lyrics[1]["text"])
+                    t_nxt = rf"\pos(960,{cur_y + spacing})\fad(350,200)\1c{second_col}\alpha&H55&"
+                    lines.append(
+                        f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                        f"Default,,0,0,0,,{{{t_nxt}}}{nxt}"
+                    )
+            else:
+                # Current: slides up from next-slot position and brightens
+                t_cur = rf"\move(960,{cur_y + spacing},960,{cur_y},0,{tr_ms})\alpha&H55&\t(0,{tr_ms},\alpha&H00&)"
+                lines.append(
+                    f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                    f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
+                )
+                # Next: slides in from below and settles to dim
+                if i + 1 < len(timed_lyrics):
+                    nxt   = _ass_escape(timed_lyrics[i + 1]["text"])
+                    t_nxt = rf"\move(960,{cur_y + 2*spacing},960,{cur_y + spacing},0,{tr_ms})\1c{second_col}\alpha&HBB&\t(0,{tr_ms},\alpha&H55&)"
+                    lines.append(
+                        f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                        f"Default,,0,0,0,,{{{t_nxt}}}{nxt}"
+                    )
 
         elif multi_mode == "full":
-            # ── Full lyrics: rolling 4-line window centered on current ─────
-            # Slots: past(-1), current(0), next(+1), far(+2)
-            cur_y   = 490
-            window  = [(i - 1, "past"), (i, "cur"), (i + 1, "next"), (i + 2, "far")]
-            for slot, (idx, role) in enumerate(window):
+            # ── Full lyrics: true teleprompter scroll — every line \move()s up ──
+            # Slots:  past(slot 0)  |  cur(slot 1)  |  next(slot 2)  |  far(slot 3)
+            # y_this = cur_y + (slot_idx - 1) * spacing
+            # y_from = y_this + spacing   (where the line sat in the previous slot)
+            cur_y  = 490
+            tr_ms  = 250
+            window = [(i - 1, "past"), (i, "cur"), (i + 1, "next"), (i + 2, "far")]
+
+            for slot_idx, (idx, role) in enumerate(window):
                 if idx < 0 or idx >= len(timed_lyrics):
                     continue
-                y = cur_y + (slot - 1) * spacing
-                entry = timed_lyrics[idx]
+                y_this = cur_y + (slot_idx - 1) * spacing
+                y_from = y_this + spacing      # one slot below = previous position
+                entry  = timed_lyrics[idx]
+                layer  = 1 if role == "cur" else 0
+
                 if role == "cur":
-                    body  = text_body
-                    tags  = rf"\pos(960,{y})\fad(200,300)"
-                    layer = 1
+                    body = text_body
+                    if i == 0:
+                        tags = rf"\pos(960,{y_this})\fad(400,150)"
+                    else:
+                        # Was "next" → slides up into center, brightens from dim
+                        tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\alpha&H55&\t(0,{tr_ms},\alpha&H00&)"
+
                 elif role == "past":
-                    body  = _ass_escape(entry["text"])
-                    tags  = rf"\pos(960,{y})\fad(200,300)\1c{sung_col}\alpha&H88&"
-                    layer = 0
+                    body = _ass_escape(entry["text"])
+                    # Was "cur" → slides up, dims to sung color
+                    tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\1c{sung_col}\t(0,{tr_ms},\alpha&H88&)"
+
                 elif role == "next":
-                    body  = _ass_escape(entry["text"])
-                    tags  = rf"\pos(960,{y})\fad(200,300)\1c{second_col}\alpha&H55&"
-                    layer = 0
+                    body = _ass_escape(entry["text"])
+                    if i == 0:
+                        tags = rf"\pos(960,{y_this})\fad(400,150)\1c{second_col}\alpha&H55&"
+                    else:
+                        # Was "far" → slides up, brightens slightly
+                        tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\1c{second_col}\alpha&H99&\t(0,{tr_ms},\alpha&H55&)"
+
                 else:  # far
-                    body  = _ass_escape(entry["text"])
-                    tags  = rf"\pos(960,{y})\fad(200,300)\1c{second_col}\alpha&H99&"
-                    layer = 0
+                    body = _ass_escape(entry["text"])
+                    if i == 0:
+                        tags = rf"\pos(960,{y_this})\fad(400,150)\1c{second_col}\alpha&H99&"
+                    else:
+                        # Enters from below (wasn't visible in previous slot)
+                        tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\1c{second_col}\alpha&HCC&\t(0,{tr_ms},\alpha&H99&)"
+
                 lines.append(
                     f"Dialogue: {layer},{seconds_to_ass(start)},{seconds_to_ass(end)},"
                     f"Default,,0,0,0,,{{{tags}}}{body}"
