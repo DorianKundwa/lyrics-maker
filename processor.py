@@ -271,44 +271,47 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         else:
             text_body = _ass_escape(item.get("text", ""))
 
-        # ── Per-style intro + outro tags (single-line emit styles only) ──────────
-        is_last = (i == len(timed_lyrics) - 1)
-        dur_ms  = max(1, int((end - start) * 1000))  # event duration in ms
+        # ── Per-style intro + outro tags ───────────────────────────────────────
+        is_first = (i == 0)
+        is_last  = (i == len(timed_lyrics) - 1)
 
         if lyric_style == "classic":
-            # Intro: gentle 15px upward drift + 200ms fade-in
-            # Outro: hold position, 350ms fade-out
-            prefix = r"\move(960,555,960,540,0,400)\fad(200,350)"
+            # Middle lines: upward drift only, NO fade-in/out — back-to-back
+            # events at full opacity create a clean seamless boundary.
+            # Only the very first line fades in and the very last line fades out.
+            if is_first:
+                prefix = r"\move(960,555,960,540,0,400)\fad(250,0)"
+            elif is_last:
+                prefix = r"\move(960,555,960,540,0,400)\fad(0,400)"
+            else:
+                prefix = r"\move(960,555,960,540,0,400)"  # drift only, no fad
 
         elif lyric_style == "karaoke_bar":
-            # Intro: entire bar rises from below the frame (no fade, mechanical)
-            # Outro: bar slides back down off-screen (no fade, clean cut)
-            intro_ms = 300
-            outro_ms = 250
-            # We simulate a slide-out by moving from rest to off-screen in the last outro_ms
-            # ASS \move only does one motion, so we use:
-            #   t1=0, t2=intro_ms  → slides up into position
-            #   t1=dur_ms-outro_ms, t2=dur_ms → slides back down
-            # Achieved by stacking \move with the longer span covering both
-            # For libass: \move(x1,y1,x2,y2) keeps x2,y2 after t2. So we only get entry.
-            # Best achievable: entry slide, hold, fade-out exit
-            prefix = rf"\move(960,1120,960,1020,0,{intro_ms})\fad(0,{outro_ms})"
+            # Bar slides up from off-screen on EVERY line — zero fade,
+            # pure mechanical feel (like a real karaoke machine).
+            prefix = r"\move(960,1120,960,1020,0,300)"
 
         elif lyric_style == "cinematic":
-            # Intro: blurry text slides up + blur dissolves to sharp (400ms fade-in)
-            # Outro: text continues floating upward slowly, 600ms fade-out
-            # Long \move keeps text drifting throughout the event
-            prefix = r"\move(960,600,960,470,0,8000)\fad(400,600)\blur5\t(0,500,\blur0)"
+            # Every line drifts up and dissolves — the fade IS the cinematic look.
+            if is_first:
+                prefix = r"\move(960,600,960,470,0,8000)\fad(600,600)\blur5\t(0,500,\blur0)"
+            elif is_last:
+                prefix = r"\move(960,600,960,470,0,8000)\fad(400,900)\blur5\t(0,500,\blur0)"
+            else:
+                prefix = r"\move(960,600,960,470,0,8000)\fad(400,600)\blur5\t(0,500,\blur0)"
 
         elif lyric_style == "minimal":
-            # Intro: 400ms whisper fade-in, no movement
-            # Outro: 700ms slow dissolve — barely there, barely gone
-            prefix = r"\fad(400,700)"
+            # Every line softly crossfades — gentle fade IS the minimal aesthetic.
+            if is_first:
+                prefix = r"\fad(600,500)"
+            elif is_last:
+                prefix = r"\fad(400,900)"
+            else:
+                prefix = r"\fad(400,700)"
 
         elif lyric_style == "bold":
-            # Intro: instant appear at 115%, snap to 100% in 80ms ("POP!")
-            # Outro: hold at 100%, snap vanish (100ms hard cut fade)
-            prefix = r"\fscx115\fscy115\t(0,80,\fscx100\fscy100)\fad(0,100)"
+            # ZERO fade. Scale-bounce entry, instant vanish. No fade whatsoever.
+            prefix = r"\fscx115\fscy115\t(0,80,\fscx100\fscy100)"
 
         else:
             # neon and multi-line styles handled separately below
