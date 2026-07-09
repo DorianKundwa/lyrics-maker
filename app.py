@@ -110,6 +110,7 @@ def _save_alignment_for_editor(
     active_color: str = "#FFFFFF",
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
+    lyric_style: str = "classic",
 ) -> None:
     """
     Called after a successful render (before cleanup).
@@ -157,6 +158,7 @@ def _save_alignment_for_editor(
         "active_color":   active_color,
         "upcoming_color": upcoming_color,
         "sung_color":     sung_color,
+        "lyric_style":    lyric_style,
         "audio_path":     str(audio_dest),
         "bg_path":        str(bg_dest),
         "out_dir":        str(out_dir),
@@ -228,6 +230,7 @@ async def start_process(
     active_color:   str = Form("#FFFFFF"),
     upcoming_color: str = Form("#FF0000"),
     sung_color:     str = Form("#FFFFFF"),
+    lyric_style:    str = Form("classic"),
 ):
     if artist and title:
         job_id = f"{_safe(artist, 'artist')}_{_safe(title, 'song')}"
@@ -283,7 +286,7 @@ async def start_process(
     background_tasks.add_task(
         _run_job, job_id, audio_path, lyrics_path, bg_path, outro_path, out_dir,
         title, artist, font_name, font_size, stem_engine, word_highlight, language,
-        active_color, upcoming_color, sung_color,
+        active_color, upcoming_color, sung_color, lyric_style,
     )
     return {"job_id": job_id}
 
@@ -308,6 +311,7 @@ async def _run_job(
     active_color: str = "#FFFFFF",
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
+    lyric_style: str = "classic",
 ):
     async with _semaphore:
         job = _jobs[job_id]
@@ -349,7 +353,7 @@ async def _run_job(
             await run(
                 proc.generate_lyrics_video,
                 bg_path, audio_path, vocals_path, lyrics_path, lv_path, outro_path, title, artist, font_name, font_size, word_highlight, language,
-                active_color, upcoming_color, sung_color,
+                active_color, upcoming_color, sung_color, lyric_style,
             )
 
             srt_path = out_dir / "lyrics.srt"
@@ -372,7 +376,7 @@ async def _run_job(
                 _save_alignment_for_editor(
                     job_id, audio_path, bg_path, out_dir,
                     title, artist, font_name, font_size, word_highlight, language,
-                    active_color, upcoming_color, sung_color,
+                    active_color, upcoming_color, sung_color, lyric_style,
                 )
                 _save_jobs_store()
             except Exception:
