@@ -474,7 +474,12 @@ def get_alignment_audio(job_id: str):
         audio_path = Path(data.get("audio_path", ""))
         if not audio_path.exists():
             return JSONResponse({"error": "Audio file not found"}, status_code=404)
-        return FileResponse(audio_path, media_type="audio/mpeg")
+        _audio_mime = {
+            ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac",
+            ".wav": "audio/wav",  ".ogg": "audio/ogg", ".flac": "audio/flac",
+        }
+        media_type = _audio_mime.get(audio_path.suffix.lower(), "audio/mpeg")
+        return FileResponse(audio_path, media_type=media_type)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
