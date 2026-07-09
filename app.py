@@ -313,85 +313,85 @@ async def _run_job(
         job = _jobs[job_id]
         loop = asyncio.get_running_loop()
 
-    def run(fn, *args, **kwargs):
-        return loop.run_in_executor(None, lambda: fn(*args, **kwargs))
+        def run(fn, *args, **kwargs):
+            return loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
-    def check_cancelled():
-        if _jobs.get(job_id, {}).get("status") == "cancelled":
-            raise InterruptedError("Job cancelled by user")
+        def check_cancelled():
+            if _jobs.get(job_id, {}).get("status") == "cancelled":
+                raise InterruptedError("Job cancelled by user")
 
-    try:
-        check_cancelled()
-        # 1 — Thumbnail
-        _set(job_id, step="Generating YouTube thumbnail…", progress=5)
-        thumb_path = out_dir / "thumbnail.jpg"
-        await run(proc.generate_thumbnail, bg_path, thumb_path, title, artist, (1280, 720), font_name)
-
-        check_cancelled()
-        # 1.5 — Stem Separation
-        _set(job_id, step="Separating stems (this may take a few minutes)…", progress=15)
-        from stem_separator import separate_audio
-        vocals_path, inst_audio_path = await run(separate_audio, audio_path, stem_engine, str(out_dir))
-
-        check_cancelled()
-        # 2 — Instrumental video
-        _set(job_id, step="Rendering instrumental video…", progress=35)
-        inst_path = out_dir / "instrumental.mp4"
-        await run(
-            proc.generate_instrumental_video,
-            bg_path, inst_audio_path, inst_path, outro_path, title, artist,
-        )
-
-        check_cancelled()
-        # 3 — Lyrics video
-        _set(job_id, step="Rendering lyrics video…", progress=65)
-        lv_path = out_dir / "lyrics_video.mp4"
-        await run(
-            proc.generate_lyrics_video,
-            bg_path, audio_path, vocals_path, lyrics_path, lv_path, outro_path, title, artist, font_name, font_size, word_highlight, language,
-            active_color, upcoming_color, sung_color,
-        )
-
-        job.update(
-            status="complete",
-            step="All files ready!",
-            progress=100,
-            files={
-                "lyrics_video":  str(lv_path),
-                "instrumental":  str(inst_path),
-                "thumbnail":     str(thumb_path),
-            },
-        )
-        
-        # ── Save alignment data for the Lyric Editor (non-fatal) ─────────
         try:
-            _save_alignment_for_editor(
-                job_id, audio_path, bg_path, out_dir,
-                title, artist, font_name, font_size, word_highlight, language,
+            check_cancelled()
+            # 1 — Thumbnail
+            _set(job_id, step="Generating YouTube thumbnail…", progress=5)
+            thumb_path = out_dir / "thumbnail.jpg"
+            await run(proc.generate_thumbnail, bg_path, thumb_path, title, artist, (1280, 720), font_name)
+
+            check_cancelled()
+            # 1.5 — Stem Separation
+            _set(job_id, step="Separating stems (this may take a few minutes)…", progress=15)
+            from stem_separator import separate_audio
+            vocals_path, inst_audio_path = await run(separate_audio, audio_path, stem_engine, str(out_dir))
+
+            check_cancelled()
+            # 2 — Instrumental video
+            _set(job_id, step="Rendering instrumental video…", progress=35)
+            inst_path = out_dir / "instrumental.mp4"
+            await run(
+                proc.generate_instrumental_video,
+                bg_path, inst_audio_path, inst_path, outro_path, title, artist,
+            )
+
+            check_cancelled()
+            # 3 — Lyrics video
+            _set(job_id, step="Rendering lyrics video…", progress=65)
+            lv_path = out_dir / "lyrics_video.mp4"
+            await run(
+                proc.generate_lyrics_video,
+                bg_path, audio_path, vocals_path, lyrics_path, lv_path, outro_path, title, artist, font_name, font_size, word_highlight, language,
                 active_color, upcoming_color, sung_color,
             )
-            _save_jobs_store()
-        except Exception:
-            pass
 
-        # Cleanup intermediate files in out_dir
-        keep_files = {lv_path.name, inst_path.name, thumb_path.name}
-        for f in out_dir.iterdir():
-            if f.is_file() and f.name not in keep_files:
-                try:
-                    f.unlink()
-                except Exception:
-                    pass
+            job.update(
+                status="complete",
+                step="All files ready!",
+                progress=100,
+                files={
+                    "lyrics_video":  str(lv_path),
+                    "instrumental":  str(inst_path),
+                    "thumbnail":     str(thumb_path),
+                },
+            )
 
-    except InterruptedError:
-        job.update(status="error", step="Cancelled", error="Job was cancelled by the user.")
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        job.update(status="error", step="Failed", error="An internal error occurred during processing. Please try again.")
-    finally:
-        job_dir = UPLOAD_DIR / job_id
-        shutil.rmtree(job_dir, ignore_errors=True)
+            # ── Save alignment data for the Lyric Editor (non-fatal) ─────────
+            try:
+                _save_alignment_for_editor(
+                    job_id, audio_path, bg_path, out_dir,
+                    title, artist, font_name, font_size, word_highlight, language,
+                    active_color, upcoming_color, sung_color,
+                )
+                _save_jobs_store()
+            except Exception:
+                pass
+
+            # Cleanup intermediate files in out_dir
+            keep_files = {lv_path.name, inst_path.name, thumb_path.name}
+            for f in out_dir.iterdir():
+                if f.is_file() and f.name not in keep_files:
+                    try:
+                        f.unlink()
+                    except Exception:
+                        pass
+
+        except InterruptedError:
+            job.update(status="error", step="Cancelled", error="Job was cancelled by the user.")
+        except Exception as exc:
+            import traceback
+            traceback.print_exc()
+            job.update(status="error", step="Failed", error="An internal error occurred during processing. Please try again.")
+        finally:
+            job_dir = UPLOAD_DIR / job_id
+            shutil.rmtree(job_dir, ignore_errors=True)
 
 
 # ─── Status & Download ───────────────────────────────────────────────────────
