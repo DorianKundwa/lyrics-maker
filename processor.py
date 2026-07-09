@@ -136,7 +136,57 @@ def assign_timestamps(
 
 # ─── ASS Subtitle Generation ────────────────────────────────────────────────
 
-
+# Style presets: each entry drives the ASS [V4+ Styles] header and per-line tags.
+_LYRIC_STYLES: dict[str, dict] = {
+    "classic": {
+        "bold": -1, "italic": 0, "border_style": 1,
+        "outline": 4, "shadow": 3, "alignment": 5,
+        "margin_l": 60, "margin_r": 60, "margin_v": 0,
+        "back_colour": "&HAA000000",
+        "tags": r"\fad(150,300)",
+        "font_scale": 1.0, "neon": False,
+    },
+    "karaoke_bar": {
+        "bold": -1, "italic": 0, "border_style": 3,
+        "outline": 15, "shadow": 0, "alignment": 2,
+        "margin_l": 0, "margin_r": 0, "margin_v": 60,
+        "back_colour": "&HCC000000",
+        "tags": r"\fad(100,200)",
+        "font_scale": 1.0, "neon": False,
+    },
+    "cinematic": {
+        "bold": 0, "italic": 1, "border_style": 1,
+        "outline": 0, "shadow": 14, "alignment": 5,
+        "margin_l": 80, "margin_r": 80, "margin_v": 0,
+        "back_colour": "&H99000000",
+        "tags": None,  # generated per-line with \move
+        "font_scale": 1.0, "neon": False,
+    },
+    "minimal": {
+        "bold": 0, "italic": 0, "border_style": 1,
+        "outline": 0, "shadow": 2, "alignment": 2,
+        "margin_l": 60, "margin_r": 60, "margin_v": 40,
+        "back_colour": "&H88000000",
+        "tags": r"\fad(200,400)",
+        "font_scale": 0.65, "neon": False,
+    },
+    "bold": {
+        "bold": -1, "italic": 0, "border_style": 1,
+        "outline": 8, "shadow": 0, "alignment": 5,
+        "margin_l": 60, "margin_r": 60, "margin_v": 0,
+        "back_colour": "&H00000000",
+        "tags": r"\fad(60,120)",
+        "font_scale": 1.0, "neon": False,
+    },
+    "neon": {
+        "bold": -1, "italic": 0, "border_style": 1,
+        "outline": 0, "shadow": 0, "alignment": 5,
+        "margin_l": 60, "margin_r": 60, "margin_v": 0,
+        "back_colour": "&H00000000",
+        "tags": r"\fad(200,400)",
+        "font_scale": 1.0, "neon": True,  # two dialogue layers per line
+    },
+}
 
 
 def generate_ass(
@@ -150,8 +200,16 @@ def generate_ass(
     active_color: str = "#FFFFFF",
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
+    lyric_style: str = "classic",
 ) -> str:
-    """Build an ASS subtitle file string with Karaoke tags."""
+    """Build an ASS subtitle file string with optional style preset."""
+    sc = _LYRIC_STYLES.get(lyric_style, _LYRIC_STYLES["classic"])
+    eff_size    = max(10, int(font_size * sc["font_scale"]))
+    primary_col = _hex_to_ass(active_color)
+    second_col  = _hex_to_ass(upcoming_color)
+    outline_col = "&H00000000"
+    back_col    = sc["back_colour"]
+
     header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: 1920
@@ -161,45 +219,66 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font_name},{font_size},{_hex_to_ass(active_color)},{_hex_to_ass(upcoming_color)},&H00000000,&HAA000000,-1,0,0,0,100,100,2,0,1,4,3,5,60,60,0,1
-Style: Title,{font_name},42,&H00DDDDDD,{_hex_to_ass(upcoming_color)},&H00000000,&H88000000,0,0,0,0,100,100,1,0,1,2,1,8,60,60,30,1
+Style: Default,{font_name},{eff_size},{primary_col},{second_col},{outline_col},{back_col},{sc["bold"]},{sc["italic"]},0,0,100,100,2,0,{sc["border_style"]},{sc["outline"]},{sc["shadow"]},{sc["alignment"]},{sc["margin_l"]},{sc["margin_r"]},{sc["margin_v"]},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
-    lines = [header]
+    lines  = [header]
+    # Glow colour for neon layer = upcoming/accent color
+    neon_glow_col = second_col
 
-    # Removed title / artist text from the video output
     for item in timed_lyrics:
         start = item["start"]
-        end = item["end"]
+        end   = item["end"]
         words = item.get("words", [])
-        
+
+        # ── Build karaoke or plain text body ─────────────────────────────
         if words and word_highlight:
             karaoke_text = ""
             current_time = start
             for w in words:
                 w_start = w["start"]
-                w_end = w["end"]
+                w_end   = w["end"]
                 if w_start > current_time:
                     gap_cs = int((w_start - current_time) * 100)
                     if gap_cs > 0:
                         karaoke_text += f"{{\\k{gap_cs}}}"
                 duration_cs = int(max(0, w_end - w_start) * 100)
-                word_text = _ass_escape(w["text"])
-                karaoke_text += f"{{\\k{duration_cs}}}{word_text} "
+                karaoke_text += f"{{\\k{duration_cs}}}{_ass_escape(w['text'])} "
                 current_time = w_end
-            line_text = karaoke_text.strip()
+            text_body = karaoke_text.strip()
         else:
-            line_text = _ass_escape(item.get("text", ""))
+            text_body = _ass_escape(item.get("text", ""))
 
-        # Apply smooth 150ms fade in and 300ms fade out
-        line_text = f"{{\\fad(150,300)}}{line_text}"
+        # ── Style-specific prefix override tags ───────────────────────────
+        if lyric_style == "cinematic":
+            prefix = r"\move(960,590,960,540,0,400)\fad(350,500)\blur2"
+        else:
+            prefix = sc["tags"] or r"\fad(150,300)"
 
-        lines.append(
-            f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-            f"Default,,0,0,0,,{line_text}"
-        )
+        line_text = f"{{{prefix}}}{text_body}"
+
+        # ── Emit dialogue line(s) ─────────────────────────────────────────
+        if sc["neon"]:
+            # Layer 0: blurred colored glow (plain text, no karaoke tags)
+            plain  = _ass_escape(item.get("text", ""))
+            glow   = f"{{\\blur14\\1c{neon_glow_col}\\fad(200,400)}}{plain}"
+            lines.append(
+                f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                f"Default,,0,0,0,,{glow}"
+            )
+            # Layer 1: sharp foreground text (karaoke or plain)
+            sharp  = f"{{\\blur0\\fad(200,400)}}{text_body}"
+            lines.append(
+                f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                f"Default,,0,0,0,,{sharp}"
+            )
+        else:
+            lines.append(
+                f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
+                f"Default,,0,0,0,,{line_text}"
+            )
 
     return "\n".join(lines)
 
@@ -405,6 +484,7 @@ def generate_lyrics_video(
     active_color: str = "#FFFFFF",
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
+    lyric_style: str = "classic",
 ) -> None:
     """Background image + synced lyrics subtitles + audio."""
     work_dir = Path(output_path).parent
@@ -472,6 +552,7 @@ def generate_lyrics_video(
         timed, title=title, artist=artist, total_duration=duration,
         font_name=font_name, font_size=font_size, word_highlight=word_highlight,
         active_color=active_color, upcoming_color=upcoming_color, sung_color=sung_color,
+        lyric_style=lyric_style,
     )
     ass_path = work_dir / "_lyrics.ass"
     ass_path.write_text(ass_content, encoding="utf-8")
