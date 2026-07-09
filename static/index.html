@@ -423,7 +423,104 @@
     }
   }
 
-  /* No inline editor CSS anymore */
+  /* ── Style picker ── */
+  .style-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+    animation: fadeUp .7s .22s ease both;
+  }
+  .style-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .2s, transform .15s, box-shadow .2s;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
+  .style-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
+  .style-card input[type="radio"] { display: none; }
+  .style-card.sc-selected {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px #7c3aed44;
+  }
+  .style-preview {
+    height: 88px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+  }
+  .style-info { padding: 10px 12px; border-top: 1px solid var(--border); }
+  .style-name  { font-family:'Syne',sans-serif; font-weight:700; font-size:.82rem; color:var(--text); }
+  .style-desc  { font-size:.7rem; color:var(--muted); margin-top:3px; line-height:1.4; }
+
+  /* Preview text base */
+  .sp-text { font-size:1.15rem; font-weight:bold; letter-spacing:.5px; }
+
+  /* Classic */
+  .sp-classic .sp-text {
+    color:#fff;
+    text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000;
+  }
+
+  /* Karaoke Bar */
+  .sp-karaoke-bar { align-items:flex-end; justify-content:stretch; }
+  .sp-karaoke-bar .sp-bar {
+    width:100%; background:rgba(0,0,0,.82);
+    display:flex; align-items:center; justify-content:center;
+    padding:10px 0;
+  }
+  .sp-karaoke-bar .sp-text { font-size:1rem; color:#fff; }
+  .sp-karaoke-bar .sp-highlight { color:var(--accent); }
+
+  /* Cinematic */
+  .sp-cinematic .sp-text {
+    font-style:italic;
+    color:#fff;
+    text-shadow:0 8px 24px rgba(255,255,255,.55),0 4px 12px rgba(0,0,0,.9);
+    animation: cinemaDrift 3s ease-in-out infinite;
+  }
+  @keyframes cinemaDrift {
+    0%,100% { transform:translateY(5px); opacity:.75; }
+    50%      { transform:translateY(0);  opacity:1; }
+  }
+
+  /* Minimal */
+  .sp-minimal { align-items:flex-end; justify-content:flex-end; padding:0 12px 10px; }
+  .sp-minimal .sp-text {
+    color:rgba(255,255,255,.62); font-size:.72rem; font-weight:400; letter-spacing:1px;
+  }
+
+  /* Bold */
+  .sp-bold .sp-text {
+    color:#fff; font-size:1.35rem;
+    -webkit-text-stroke:3px #000;
+    paint-order:stroke fill;
+    text-shadow:none;
+  }
+
+  /* Neon */
+  .sp-neon .sp-text {
+    color:#fff;
+    text-shadow:0 0 6px var(--accent),0 0 18px var(--accent),0 0 36px #ff3c6460;
+    animation:neonPulse 2s ease-in-out infinite;
+  }
+  @keyframes neonPulse {
+    0%,100% { text-shadow:0 0 6px var(--accent),0 0 18px var(--accent),0 0 36px #ff3c6460; }
+    50%      { text-shadow:0 0 10px var(--accent),0 0 28px var(--accent),0 0 52px var(--accent); }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .style-cards { grid-template-columns: 1fr 1fr; }
+  }
 
 </style>
 </head>
@@ -560,8 +657,82 @@
       </div>
     </div>
 
-    <!-- Step 5: Lyric Colors -->
-    <div class="section-label" style="margin-top:28px"><span class="num">5</span> Lyric Colors</div>
+    <!-- Step 5: Lyrics Style -->
+    <div class="section-label" style="margin-top:28px"><span class="num">5</span> Lyrics Style</div>
+    <div class="style-cards" id="styleCards">
+
+      <label class="style-card sc-selected" id="sc-classic">
+        <input type="radio" name="lyric_style" value="classic" checked>
+        <div class="style-preview sp-classic">
+          <span class="sp-text">Lyrics Here</span>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Classic</div>
+          <div class="style-desc">Bold, centered, black outline</div>
+        </div>
+      </label>
+
+      <label class="style-card" id="sc-karaoke_bar">
+        <input type="radio" name="lyric_style" value="karaoke_bar">
+        <div class="style-preview sp-karaoke-bar">
+          <div class="sp-bar">
+            <span class="sp-text"><span class="sp-highlight">Lyrics</span> Here</span>
+          </div>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Karaoke Bar</div>
+          <div class="style-desc">Dark strip at bottom</div>
+        </div>
+      </label>
+
+      <label class="style-card" id="sc-cinematic">
+        <input type="radio" name="lyric_style" value="cinematic">
+        <div class="style-preview sp-cinematic">
+          <span class="sp-text">Lyrics Here</span>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Cinematic</div>
+          <div class="style-desc">Italic, slides up, deep shadow</div>
+        </div>
+      </label>
+
+      <label class="style-card" id="sc-minimal">
+        <input type="radio" name="lyric_style" value="minimal">
+        <div class="style-preview sp-minimal">
+          <span class="sp-text">Lyrics Here</span>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Minimal</div>
+          <div class="style-desc">Small, clean, bottom corner</div>
+        </div>
+      </label>
+
+      <label class="style-card" id="sc-bold">
+        <input type="radio" name="lyric_style" value="bold">
+        <div class="style-preview sp-bold">
+          <span class="sp-text">Lyrics Here</span>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Bold Pop</div>
+          <div class="style-desc">Thick outline, high contrast snap</div>
+        </div>
+      </label>
+
+      <label class="style-card" id="sc-neon">
+        <input type="radio" name="lyric_style" value="neon">
+        <div class="style-preview sp-neon">
+          <span class="sp-text">Lyrics Here</span>
+        </div>
+        <div class="style-info">
+          <div class="style-name">Neon Glow</div>
+          <div class="style-desc">Colored halo glow, dual layer</div>
+        </div>
+      </label>
+
+    </div>
+
+    <!-- Step 6: Lyric Colors -->
+    <div class="section-label" style="margin-top:28px"><span class="num">6</span> Lyric Colors</div>
     <div class="meta-row" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 16px;">
       <div class="field-group">
         <label for="active_color">🟡 Active Word Color</label>
@@ -819,6 +990,17 @@ function showResults(jobId, fileKeys) {
         </a>
       </div>`;
 }
+
+// ── Style card selection ───────────────────────────────────────────────────
+const styleCards = document.querySelectorAll('.style-card');
+styleCards.forEach(card => {
+  card.addEventListener('click', () => {
+    styleCards.forEach(c => c.classList.remove('sc-selected'));
+    card.classList.add('sc-selected');
+    const radio = card.querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
+  });
+});
 
 function showError(msg) {
   progressPanel.classList.remove('visible');
