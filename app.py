@@ -352,6 +352,7 @@ async def _run_job(
                 active_color, upcoming_color, sung_color,
             )
 
+            srt_path = out_dir / "lyrics.srt"
             job.update(
                 status="complete",
                 step="All files ready!",
@@ -360,6 +361,9 @@ async def _run_job(
                     "lyrics_video":  str(lv_path),
                     "instrumental":  str(inst_path),
                     "thumbnail":     str(thumb_path),
+                    **({
+                        "lyrics_srt": str(srt_path),
+                    } if srt_path.exists() else {}),
                 },
             )
 
@@ -374,8 +378,8 @@ async def _run_job(
             except Exception:
                 pass
 
-            # Cleanup intermediate files in out_dir
-            keep_files = {lv_path.name, inst_path.name, thumb_path.name}
+            # Cleanup intermediate files in out_dir (keep SRT for download)
+            keep_files = {lv_path.name, inst_path.name, thumb_path.name, "lyrics.srt"}
             for f in out_dir.iterdir():
                 if f.is_file() and f.name not in keep_files:
                     try:
@@ -426,7 +430,8 @@ def download(job_id: str, file_key: str):
     if file_key not in files:
         return JSONResponse({"error": "Unknown file"}, status_code=404)
     path = Path(files[file_key])
-    media = "video/mp4" if path.suffix == ".mp4" else "image/jpeg"
+    _mime_map = {".mp4": "video/mp4", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".srt": "text/plain"}
+    media = _mime_map.get(path.suffix.lower(), "application/octet-stream")
     return FileResponse(path, media_type=media, filename=path.name)
 
 
