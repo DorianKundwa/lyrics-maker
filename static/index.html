@@ -886,6 +886,90 @@ const resultsGrid   = document.getElementById('resultsGrid');
 
 let currentJobId = null;
 let pollActive = false;
+let _originalTitle = document.title;
+let _titleFlashInterval = null;
+
+// ── Completion notification helpers ──────────────────────────────────────────
+
+/** Play a pleasant 3-note chime using the Web Audio API (no file needed). */
+function playCompletionChime() {
+  try {
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523.25, 659.25, 783.99]; // C5 – E5 – G5  (major chord arpeggiated)
+    notes.forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t0 = ctx.currentTime + i * 0.18;
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(0.35, t0 + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.55);
+      osc.start(t0);
+      osc.stop(t0 + 0.6);
+    });
+    // Auto-close context after chime finishes
+    setTimeout(() => ctx.close(), 2000);
+  } catch (e) {
+    // Web Audio not available — silently skip
+  }
+}
+
+/** Flash the browser tab title to catch the user's attention. */
+function flashTabTitle(message) {
+  if (_titleFlashInterval) clearInterval(_titleFlashInterval);
+  let show = true;
+  let count = 0;
+  _titleFlashInterval = setInterval(() => {
+    document.title = show ? `🎬 ${message}` : _originalTitle;
+    show = !show;
+    if (++count >= 10) {           // flash 5 times then stay on message
+      clearInterval(_titleFlashInterval);
+      document.title = `🎬 ${message}`;
+    }
+  }, 600);
+}
+
+/** Show a browser desktop notification (requests permission if needed). */
+async function showDesktopNotification(title, body) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'denied') return;
+  if (Notification.permission !== 'granted') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return;
+  }
+  const n = new Notification(title, {
+    body,
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    tag: 'lyrics-done',
+    requireInteraction: false,
+  });
+  setTimeout(() => n.close(), 8000);
+}
+
+/**
+ * Master completion notifier — call when a video finishes.
+ * Plays chime + desktop notification + tab flash.
+ */
+function notifyDone(jobId) {
+  playCompletionChime();
+  flashTabTitle('Video Ready!');
+  showDesktopNotification(
+    '🎬 Lyrics Video Ready!',
+    'Your video has finished processing. Click to view and download.'
+  );
+}
+
+/** Request notification permission proactively when a job starts. */
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
 
 btnCancel.addEventListener('click', async () => {
   if (!currentJobId) return;
@@ -940,6 +1024,10 @@ form.addEventListener('submit', async e => {
     }
   }
 
+  // Reset title flash from any previous job
+  if (_titleFlashInterval) { clearInterval(_titleFlashInterval); _titleFlashInterval = null; }
+  document.title = _originalTitle;
+
   btnProcess.disabled = true;
   btnProcess.textContent = '⏳ Processing…';
   progressPanel.classList.add('visible');
@@ -953,6 +1041,7 @@ form.addEventListener('submit', async e => {
     currentJobId = job_id;
     pollActive = true;
     btnCancel.style.display = 'block';
+    requestNotificationPermission(); // ask for desktop notification permission
     
     await pollStatus(job_id);
   } catch (err) {
@@ -977,6 +1066,7 @@ async function pollStatus(jobId) {
       setProgress(100, 'Done!');
       spinner.style.display = 'none';
       progressTitle.textContent = '✅ Processing complete';
+      notifyDone(jobId);          // 🔔 chime + desktop notification + tab flash
       showResults(jobId, data.files);
       btnProcess.disabled = false;
       btnProcess.textContent = '⚡ Generate Again';
