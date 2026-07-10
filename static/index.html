@@ -587,13 +587,38 @@
         <div class="dz-filename" id="fn-audio"></div>
       </div>
 
-      <div class="drop-zone" id="dz-outro">
+      <div class="drop-zone" id="dz-outro" style="display:flex;flex-direction:column;gap:0;padding-bottom:0;">
         <input type="file" id="outro" name="outro" accept="audio/*">
         <div class="dz-badge">✓</div>
         <div class="dz-icon">🎼</div>
         <div class="dz-label">Outro Audio <span class="optional-pill">optional</span></div>
         <div class="dz-hint">Appended after main audio</div>
         <div class="dz-filename" id="fn-outro"></div>
+        <!-- Outro overlay text — editable, shown on screen during outro -->
+        <div style="width:100%;border-top:1px solid rgba(255,255,255,0.08);margin-top:10px;padding:10px 0 4px;pointer-events:auto;" onclick="event.stopPropagation()">
+          <label for="outro_text" style="display:block;font-size:11px;font-weight:600;letter-spacing:.06em;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:5px;">Outro screen text</label>
+          <input
+            type="text"
+            id="outro_text"
+            name="outro_text"
+            value="Thanks for watching!"
+            maxlength="80"
+            placeholder="Thanks for watching!"
+            style="
+              width:100%;box-sizing:border-box;
+              background:rgba(255,255,255,0.07);
+              border:1px solid rgba(255,255,255,0.15);
+              border-radius:8px;
+              padding:7px 10px;
+              font-size:13px;
+              color:#fff;
+              outline:none;
+              transition:border-color .2s;
+            "
+            onfocus="this.style.borderColor='rgba(255,255,255,0.45)'"
+            onblur="this.style.borderColor='rgba(255,255,255,0.15)'"
+          >
+        </div>
       </div>
 
     </div>

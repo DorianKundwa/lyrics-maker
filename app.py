@@ -219,6 +219,7 @@ async def start_process(
     lyrics:      Optional[UploadFile] = File(None),
     lyrics_text: Optional[str] = Form(None),
     outro:       Optional[UploadFile] = File(None),
+    outro_text:  str = Form("Thanks for watching!"),
     title:       str = Form(""),
     artist:      str = Form(""),
     font_name:   str = Form("Arial"),
@@ -287,6 +288,7 @@ async def start_process(
         _run_job, job_id, audio_path, lyrics_path, bg_path, outro_path, out_dir,
         title, artist, font_name, font_size, stem_engine, word_highlight, language,
         active_color, upcoming_color, sung_color, lyric_style,
+        outro_text or "Thanks for watching!",
     )
     return {"job_id": job_id}
 
@@ -312,6 +314,7 @@ async def _run_job(
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
     lyric_style: str = "classic",
+    outro_text: str = "Thanks for watching!",
 ):
     async with _semaphore:
         job = _jobs[job_id]
@@ -353,7 +356,7 @@ async def _run_job(
             await run(
                 proc.generate_lyrics_video,
                 bg_path, audio_path, vocals_path, lyrics_path, lv_path, outro_path, title, artist, font_name, font_size, word_highlight, language,
-                active_color, upcoming_color, sung_color, lyric_style,
+                active_color, upcoming_color, sung_color, lyric_style, outro_text,
             )
 
             srt_path = out_dir / "lyrics.srt"

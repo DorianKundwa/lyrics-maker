@@ -676,6 +676,7 @@ def generate_lyrics_video(
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
     lyric_style: str = "classic",
+    outro_text: str = "Thanks for watching!",
 ) -> None:
     """Background image + synced lyrics subtitles + audio."""
     work_dir = Path(output_path).parent
@@ -716,7 +717,7 @@ def generate_lyrics_video(
         timed.append({
             "start": main_dur,
             "end": main_dur + outro_dur,
-            "text": "Thanks for watching!",
+            "text": outro_text or "Thanks for watching!",
             "words": []
         })
 
