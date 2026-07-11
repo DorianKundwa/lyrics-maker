@@ -3,6 +3,15 @@ import subprocess
 import shutil
 from pathlib import Path
 
+# Permanent directory for Demucs / PyTorch model weights.
+# Using a fixed path means the ~1.26 GB htdemucs model is downloaded
+# ONCE and reused on every subsequent job, regardless of the job's
+# output folder being deleted after processing.
+_BASE_DIR   = Path(__file__).parent
+_MODEL_CACHE = _BASE_DIR / ".model_cache"
+_MODEL_CACHE.mkdir(exist_ok=True)
+
+
 def separate_audio(audio_path: str, engine: str, out_dir: str) -> tuple[str, str]:
     """
     Separates audio into vocals and instrumental tracks.
@@ -22,9 +31,14 @@ def separate_audio(audio_path: str, engine: str, out_dir: str) -> tuple[str, str
     try:
         if engine == "demucs":
             print(f"Running Demucs on {audio_path}...")
+            # Point TORCH_HOME at our permanent cache so the model is
+            # downloaded once and reused on all future jobs.
+            env = os.environ.copy()
+            env["TORCH_HOME"] = str(_MODEL_CACHE)
+
             # demucs outputs to out_dir / htdemucs / base_name / {vocals.wav, no_vocals.wav}
             cmd = ["demucs", "-n", "htdemucs", "--two-stems=vocals", "-o", out_dir, audio_path]
-            subprocess.run(cmd, check=True, capture_output=True)
+            subprocess.run(cmd, check=True, capture_output=True, env=env)
             
             demucs_dir = os.path.join(out_dir, "htdemucs", base_name)
             v_path = os.path.join(demucs_dir, "vocals.wav")

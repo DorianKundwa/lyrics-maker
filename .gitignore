@@ -9,3 +9,6 @@ aligners/alignments/
 *.wav
 *.mp3
 .env
+.model_cache/
+alignments/
+test_out/
