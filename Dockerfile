@@ -18,6 +18,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY requirements.txt .
+
+# whisperx and demucs both pull in torch. Installed via requirements.txt
+# alone, pip grabs PyPI's default CUDA-enabled wheels — several GB of
+# CUDA runtime that a GPU-less Coolify VPS will never use. Installing the
+# CPU-only build first means the requirements.txt install below just sees
+# the version constraint already satisfied and skips the CUDA build.
+RUN pip install --no-cache-dir torch~=2.8.0 torchaudio~=2.8.0 torchvision~=0.23.0 \
+    --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
