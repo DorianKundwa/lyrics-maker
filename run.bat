@@ -25,7 +25,7 @@ start http://localhost:%PORT%
 
 :: Start the FastAPI server using the virtual environment's python
 echo Starting Uvicorn on port %PORT%...
-.\venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port %PORT% --reload
+.\venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port %PORT%
 
 :: Keep window open if the server crashes or stops
 pause

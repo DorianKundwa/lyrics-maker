@@ -41,7 +41,7 @@ pip install -r requirements.txt
 ## Running the Server
 
 ```bash
-python -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
 Then open **http://localhost:8000** in your browser.
