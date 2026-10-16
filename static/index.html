@@ -236,6 +236,28 @@
   }
 
   /* ── Process button ── */
+  /* ── Inline action buttons (song info) ── */
+  .inline-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+  .btn-inline {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .85rem;
+    font-weight: 500;
+    padding: 9px 16px;
+    cursor: pointer;
+    transition: border-color .2s, opacity .2s;
+  }
+  .btn-inline:hover { border-color: var(--accent2); }
+  .btn-inline:disabled { opacity: .5; cursor: default; }
+  .inline-status { font-size: .8rem; color: var(--muted); }
+  .inline-status.ok { color: #6fcf97; }
+  .inline-status.err { color: var(--accent); }
+  .yt-block { margin-top: 20px; }
+  .yt-notice { font-size: .75rem; color: var(--muted); line-height: 1.5; margin-top: 10px; }
+
   .btn-process {
     display: block;
     width: 100%;
@@ -572,6 +594,22 @@
         <label for="artist">Artist / Band</label>
         <input type="text" id="artist" name="artist" placeholder="e.g. Taylor Swift">
       </div>
+    </div>
+    <div class="inline-actions">
+      <button type="button" class="btn-inline" id="btnFetchLyrics" onclick="fetchLyrics()">🔎 Fetch lyrics</button>
+      <span class="inline-status" id="lyricsStatus"></span>
+    </div>
+
+    <div class="yt-block">
+      <div class="field-group">
+        <label for="ytUrl">YouTube URL <span class="optional-pill">optional</span></label>
+        <input type="text" id="ytUrl" placeholder="https://www.youtube.com/watch?v=...">
+      </div>
+      <div class="inline-actions">
+        <button type="button" class="btn-inline" id="btnYoutube" onclick="downloadYoutube()">⬇ Download MP3</button>
+        <span class="inline-status" id="ytStatus"></span>
+      </div>
+      <p class="yt-notice">For personal use only, with media you have the right to use. YouTube's Terms of Service restrict downloading, even for personal use. The MP3 is loaded into Main Audio.</p>
     </div>
 
     <!-- Step 2: Audio files -->
@@ -1031,16 +1069,114 @@ function requestNotificationPermission() {
 
 btnCancel.addEventListener('click', async () => {
   if (!currentJobId) return;
-  pollActive = false; // Stop polling
+  let res = null;
   try {
-    await fetch(`/api/jobs/${currentJobId}`, { method: 'DELETE' });
+    res = await fetch(`/api/jobs/${currentJobId}`, { method: 'DELETE' });
   } catch (e) {}
+  if (res && res.status === 409) {
+    // The job finished before the cancel arrived; the poll loop shows its result.
+    return;
+  }
+  pollActive = false; // Stop polling
   
   showError('Job cancelled by user.');
   progressPanel.classList.remove('visible');
   btnCancel.style.display = 'none';
   currentJobId = null;
 });
+
+// ── Download YouTube audio as MP3 into Main Audio ──────────────────────────────────────────────────
+async function downloadYoutube() {
+  const url    = document.getElementById('ytUrl').value.trim();
+  const btn    = document.getElementById('btnYoutube');
+  const status = document.getElementById('ytStatus');
+  const setStatus = (msg, cls = '') => {
+    status.className = 'inline-status ' + cls;
+    status.textContent = msg;
+  };
+  if (!url) {
+    setStatus('Paste a YouTube link first.', 'err');
+    return;
+  }
+  btn.disabled = true;
+  setStatus('Starting download…');
+  try {
+    const body = new FormData();
+    body.append('url', url);
+    const startRes = await fetch('/api/youtube', { method: 'POST', body });
+    const startData = await startRes.json();
+    if (!startRes.ok) throw new Error(startData.error || 'Could not start download.');
+    const jobId = startData.job_id;
+
+    // Poll until the server finishes (give up after 10 minutes).
+    const deadline = Date.now() + 10 * 60 * 1000;
+    let job;
+    do {
+      await new Promise(r => setTimeout(r, 1500));
+      const res = await fetch(`/api/youtube/${jobId}`);
+      if (!res.ok) throw new Error('Download job was lost. Please try again.');
+      job = await res.json();
+      if (job.status === 'complete' || job.status === 'error') break;
+      setStatus(job.step || 'Downloading…');
+    } while (Date.now() < deadline);
+    if (job.status === 'error') throw new Error(job.error || 'Download failed.');
+    if (job.status !== 'complete') throw new Error('Download timed out.');
+
+    const fileRes = await fetch(`/api/youtube/${jobId}/file`);
+    if (!fileRes.ok) throw new Error('Could not fetch the MP3.');
+    const file = new File([await fileRes.blob()], job.filename, { type: 'audio/mpeg' });
+    const audioInput = document.getElementById('audio');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    audioInput.files = dt.files;
+    audioInput.dispatchEvent(new Event('change'));
+
+    const titleEl  = document.getElementById('title');
+    const artistEl = document.getElementById('artist');
+    if (!titleEl.value.trim() && job.title) titleEl.value = job.title;
+    if (!artistEl.value.trim() && job.artist) artistEl.value = job.artist;
+    setStatus(`✓ Loaded "${job.filename}" into Main Audio.`, 'ok');
+  } catch (err) {
+    setStatus(err.message || 'Download failed.', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Fetch lyrics (LRCLIB first, then Genius and AZLyrics) ──────────────────
+async function fetchLyrics() {
+  const title  = document.getElementById('title').value.trim();
+  const artist = document.getElementById('artist').value.trim();
+  const btn    = document.getElementById('btnFetchLyrics');
+  const status = document.getElementById('lyricsStatus');
+  if (!title) {
+    status.className = 'inline-status err';
+    status.textContent = 'Enter a song title first.';
+    return;
+  }
+  btn.disabled = true;
+  status.className = 'inline-status';
+  status.textContent = 'Searching lyrics…';
+  try {
+    const res  = await fetch('/api/lyrics?' + new URLSearchParams({ title, artist }));
+    const data = await res.json();
+    if (!res.ok || !data.found) {
+      status.className = 'inline-status err';
+      status.textContent = 'No lyrics found. Paste them under Type instead.';
+      return;
+    }
+    document.querySelector('input[name="lyrics_mode"][value="text"]').checked = true;
+    toggleLyricsMode();
+    document.getElementById('lyrics_text').value = data.text;
+    status.className = 'inline-status ok';
+    status.textContent = `✓ ${data.synced ? 'Synced' : 'Plain'} lyrics from ${data.source}. Review before generating.`;
+  } catch (err) {
+    status.className = 'inline-status err';
+    status.textContent = 'Lyrics lookup failed. Check the server connection.';
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 function toggleLyricsMode() {
   const mode = document.querySelector('input[name="lyrics_mode"]:checked').value;
@@ -1108,15 +1244,47 @@ form.addEventListener('submit', async e => {
   }
 });
 
+const MAX_POLL_FAILURES = 5;
+
+// Ends polling, clears the job, and shows the message. Used for every failure path.
+function stopPolling(message) {
+  pollActive = false;
+  currentJobId = null;
+  btnCancel.style.display = 'none';
+  showError(message);
+}
+
 async function pollStatus(jobId) {
+  let failures = 0;
   while (pollActive) {
     await sleep(1500);
     if (!pollActive) break;
-    const res = await fetch(`/api/status/${jobId}`);
-    const data = await res.json();
+
+    let res = null;
+    let data = null;
+    try {
+      res = await fetch(`/api/status/${jobId}`);
+      data = await res.json();
+    } catch (err) {
+      data = null; // network error or a body that is not JSON
+    }
+
+    if (!res || !res.ok || !data || typeof data !== 'object') {
+      if (res && res.status === 404) {
+        stopPolling('The server no longer knows this job. Start the render again.');
+        return;
+      }
+      failures += 1;
+      if (failures >= MAX_POLL_FAILURES) {
+        stopPolling('Lost contact with the server while rendering. Check that LyricForge is still running, then try again.');
+        return;
+      }
+      continue;
+    }
+    failures = 0;
 
     if (data.status === 'error') {
-      showError(data.error || 'Processing failed');
+      stopPolling(data.error || 'Processing failed');
       return;
     }
     if (data.status === 'complete') {
@@ -1126,6 +1294,11 @@ async function pollStatus(jobId) {
       progressTitle.textContent = '✅ Processing complete';
       notifyDone(jobId);          // 🔔 chime + desktop notification + tab flash
       showResults(jobId, data.files);
+      if (Array.isArray(data.warnings) && data.warnings.length) {
+        // Stages that failed quietly (for example, stem separation fell back) are reported here.
+        errorBanner.textContent = '⚠ ' + data.warnings.join(' ');
+        errorBanner.classList.add('visible');
+      }
       btnProcess.disabled = false;
       btnProcess.textContent = '⚡ Generate Again';
       btnCancel.style.display = 'none';

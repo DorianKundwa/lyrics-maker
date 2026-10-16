@@ -16,13 +16,18 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 import processor as proc
+import lyrics_fetcher as lf
+import youtube_downloader as yt
+from dotenv import load_dotenv
 
 # ─── Setup ───────────────────────────────────────────────────────────────────
 
 BASE_DIR   = Path(__file__).parent
+load_dotenv(BASE_DIR / ".env")
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "outputs"
 STATIC_DIR = BASE_DIR / "static"
+YT_DIR     = BASE_DIR / "youtube_downloads"
 
 for d in (UPLOAD_DIR, OUTPUT_DIR, STATIC_DIR):
     d.mkdir(exist_ok=True)
@@ -128,8 +133,8 @@ def _save_alignment_for_editor(
     if lv.exists():
         try:
             total_duration = proc.get_media_duration(str(lv))
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"Could not read lyrics video duration for the editor: {exc}")
 
     # Persist source files for future re-renders
     align_job_dir = ALIGN_DIR / job_id
@@ -200,7 +205,17 @@ async def _save(upload: UploadFile, dest: Path) -> Path:
     return dest
 
 
-_semaphore = asyncio.Semaphore(2)
+_semaphore: Optional[asyncio.Semaphore] = None
+
+
+def _get_semaphore() -> asyncio.Semaphore:
+    # Created on first use from inside the running event loop. Creating it at
+    # import time can bind it to the wrong loop on Python 3.9.
+    global _semaphore
+    if _semaphore is None:
+        _semaphore = asyncio.Semaphore(2)
+    return _semaphore
+
 
 def _cleanup_old_outputs():
     now = time.time()
@@ -208,8 +223,12 @@ def _cleanup_old_outputs():
         if not base_dir.exists():
             continue
         for d in base_dir.iterdir():
-            if d.is_dir() and now - d.stat().st_mtime > 3600:
-                shutil.rmtree(d, ignore_errors=True)
+            if not d.is_dir() or now - d.stat().st_mtime <= 3600:
+                continue
+            # Never delete files of a job that is still waiting or running.
+            if _jobs.get(d.name, {}).get("status") in ("queued", "running"):
+                continue
+            shutil.rmtree(d, ignore_errors=True)
 
 @app.post("/api/process")
 async def start_process(
@@ -233,10 +252,13 @@ async def start_process(
     sung_color:     str = Form("#FFFFFF"),
     lyric_style:    str = Form("classic"),
 ):
+    # Unique per submission, so two jobs for the same song never share folders
+    # or status entries.
+    suffix = uuid.uuid4().hex[:8]
     if artist and title:
-        job_id = f"{_safe(artist, 'artist')}_{_safe(title, 'song')}"
+        job_id = f"{_safe(artist, 'artist')}_{_safe(title, 'song')}_{suffix}"
     elif artist or title:
-        job_id = _safe(artist or title, "job")
+        job_id = f"{_safe(artist or title, 'job')}_{suffix}"
     else:
         job_id = str(uuid.uuid4())
 
@@ -244,12 +266,6 @@ async def start_process(
     job_dir = UPLOAD_DIR / job_id
     out_dir = OUTPUT_DIR / job_id
     
-    # Ensure empty directory if reusing name
-    if job_dir.exists():
-        shutil.rmtree(job_dir, ignore_errors=True)
-    if out_dir.exists():
-        shutil.rmtree(out_dir, ignore_errors=True)
-        
     job_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -316,7 +332,7 @@ async def _run_job(
     lyric_style: str = "classic",
     outro_text: str = "Thanks for watching!",
 ):
-    async with _semaphore:
+    async with _get_semaphore():
         job = _jobs[job_id]
         loop = asyncio.get_running_loop()
 
@@ -324,7 +340,7 @@ async def _run_job(
             return loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
         def check_cancelled():
-            if _jobs.get(job_id, {}).get("status") == "cancelled":
+            if _jobs.get(job_id, {}).get("cancel_requested"):
                 raise InterruptedError("Job cancelled by user")
 
         try:
@@ -338,7 +354,12 @@ async def _run_job(
             # 1.5 — Stem Separation
             _set(job_id, step="Separating stems (this may take a few minutes)…", progress=15)
             from stem_separator import separate_audio
-            vocals_path, inst_audio_path = await run(separate_audio, audio_path, stem_engine, str(out_dir))
+            stem_warnings: list = []
+            vocals_path, inst_audio_path = await run(
+                separate_audio, audio_path, stem_engine, str(out_dir), stem_warnings
+            )
+            if stem_warnings:
+                job.setdefault("warnings", []).extend(stem_warnings)
 
             check_cancelled()
             # 2 — Instrumental video
@@ -359,6 +380,8 @@ async def _run_job(
                 active_color, upcoming_color, sung_color, lyric_style, outro_text,
             )
 
+            # A cancel that arrived during the last stage must win over "complete".
+            check_cancelled()
             srt_path = out_dir / "lyrics.srt"
             job.update(
                 status="complete",
@@ -382,8 +405,12 @@ async def _run_job(
                     active_color, upcoming_color, sung_color, lyric_style,
                 )
                 _save_jobs_store()
-            except Exception:
-                pass
+            except Exception as exc:
+                import traceback
+                traceback.print_exc()
+                job.setdefault("warnings", []).append(
+                    f"Lyric Editor data could not be saved, so the editor is unavailable for this job ({exc})."
+                )
 
             # Cleanup intermediate files in out_dir (keep SRT for download)
             keep_files = {lv_path.name, inst_path.name, thumb_path.name, "lyrics.srt"}
@@ -413,9 +440,14 @@ def get_jobs():
 
 @app.delete("/api/jobs/{job_id}")
 def cancel_job(job_id: str):
-    if job_id in _jobs:
-        _jobs[job_id]["status"] = "cancelled"
-    return {"success": True}
+    job = _jobs.get(job_id)
+    if job is None:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    if job.get("status") in ("complete", "error"):
+        return JSONResponse({"error": "Job already finished"}, status_code=409)
+    # Stages check this flag between steps; a running ffmpeg/demucs call finishes first.
+    job["cancel_requested"] = True
+    return {"success": True, "status": "cancelling"}
 
 
 @app.get("/api/status/{job_id}")
@@ -437,9 +469,89 @@ def download(job_id: str, file_key: str):
     if file_key not in files:
         return JSONResponse({"error": "Unknown file"}, status_code=404)
     path = Path(files[file_key])
+    if not path.exists():
+        # Outputs are removed an hour after the job, but the job record is kept.
+        return JSONResponse({"error": "Output expired. Run the job again."}, status_code=410)
     _mime_map = {".mp4": "video/mp4", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".srt": "text/plain"}
     media = _mime_map.get(path.suffix.lower(), "application/octet-stream")
     return FileResponse(path, media_type=media, filename=path.name)
+
+
+@app.get("/api/lyrics")
+def fetch_lyrics_endpoint(title: str = "", artist: str = ""):
+    title, artist = title.strip(), artist.strip()
+    if not title:
+        return JSONResponse({"error": "Title is required."}, status_code=400)
+    result, errors = lf.fetch_lyrics(title, artist)
+    if result is None:
+        return JSONResponse({"found": False, "errors": errors}, status_code=404)
+    return {"found": True, **result, "errors": errors}
+
+
+# ─── YouTube → MP3 ───────────────────────────────────────────────────────────
+
+# {job_id: {"status", "step", "error", "title", "artist", "filename", "file"}}
+_yt_jobs: dict[str, dict] = {}
+
+
+def _cleanup_youtube() -> None:
+    """Remove YouTube downloads older than an hour, with their job records."""
+    if not YT_DIR.exists():
+        return
+    now = time.time()
+    for d in YT_DIR.iterdir():
+        if d.is_dir() and now - d.stat().st_mtime > 3600:
+            shutil.rmtree(d, ignore_errors=True)
+            _yt_jobs.pop(d.name, None)
+
+
+def _run_youtube_job(job_id: str, url: str) -> None:
+    """Background task: download the audio and record the result on the job."""
+    job = _yt_jobs[job_id]
+    job.update(status="running", step="Downloading audio…")
+    try:
+        result = yt.download_mp3(url, YT_DIR / job_id)
+        job.update(
+            status="complete", step="Done!",
+            title=result["title"], artist=result["artist"],
+            filename=result["filename"], file=str(result["path"]),
+        )
+    except yt.YoutubeError as exc:
+        job.update(status="error", step="Failed", error=str(exc))
+    except Exception:
+        import traceback; traceback.print_exc()
+        job.update(status="error", step="Failed", error="Download failed. Please try again.")
+
+
+@app.post("/api/youtube")
+def start_youtube(background_tasks: BackgroundTasks, url: str = Form(...)):
+    try:
+        url = yt.validate_url(url)
+    except yt.YoutubeError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    _cleanup_youtube()
+    job_id = uuid.uuid4().hex
+    _yt_jobs[job_id] = {"status": "queued", "step": "Queued", "error": None}
+    background_tasks.add_task(_run_youtube_job, job_id, url)
+    return {"job_id": job_id}
+
+
+@app.get("/api/youtube/{job_id}")
+def get_youtube_status(job_id: str):
+    if job_id not in _yt_jobs:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    return {k: v for k, v in _yt_jobs[job_id].items() if k != "file"}
+
+
+@app.get("/api/youtube/{job_id}/file")
+def get_youtube_file(job_id: str):
+    job = _yt_jobs.get(job_id)
+    if job is None or job.get("status") != "complete":
+        return JSONResponse({"error": "Not ready"}, status_code=404)
+    path = Path(job["file"])
+    if not path.exists():
+        return JSONResponse({"error": "File missing"}, status_code=404)
+    return FileResponse(path, media_type="audio/mpeg", filename=job["filename"])
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────

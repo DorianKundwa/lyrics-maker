@@ -41,10 +41,12 @@ pip install -r requirements.txt
 ## Running the Server
 
 ```bash
-python -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 Then open **http://localhost:8000** in your browser.
+
+The server listens on `127.0.0.1` only, so other devices on your network can't reach it. To allow access from other machines, change the host to `0.0.0.0`, but only on a trusted network: the app has no login.
 
 ---
 

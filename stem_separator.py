@@ -2,6 +2,7 @@ import os
 import subprocess
 import shutil
 from pathlib import Path
+from typing import Optional
 
 # Permanent directory for Demucs / PyTorch model weights.
 # Using a fixed path means the ~1.26 GB htdemucs model is downloaded
@@ -12,11 +13,20 @@ _MODEL_CACHE = _BASE_DIR / ".model_cache"
 _MODEL_CACHE.mkdir(exist_ok=True)
 
 
-def separate_audio(audio_path: str, engine: str, out_dir: str) -> tuple[str, str]:
+def separate_audio(
+    audio_path: str, engine: str, out_dir: str, warnings: Optional[list] = None
+) -> tuple[str, str]:
     """
     Separates audio into vocals and instrumental tracks.
     Returns (vocals_path, instrumental_path).
+    If `warnings` is given, a message is appended to it whenever the separation
+    falls back to the lower-quality path, so the caller can show it to the user.
     """
+    def _warn(msg: str) -> None:
+        print(msg)
+        if warnings is not None:
+            warnings.append(msg)
+
     audio_path = str(Path(audio_path).absolute())
     out_dir = str(Path(out_dir).absolute())
     os.makedirs(out_dir, exist_ok=True)
@@ -50,10 +60,15 @@ def separate_audio(audio_path: str, engine: str, out_dir: str) -> tuple[str, str
                 shutil.rmtree(os.path.join(out_dir, "htdemucs"), ignore_errors=True)
                 return vocals_out, inst_out
             else:
-                print("Demucs output not found, falling back...")
+                _warn("Demucs produced no stem files; using FFmpeg phase cancellation instead.")
 
     except Exception as e:
-        print(f"Engine {engine} failed: {e}. Falling back to FFmpeg.")
+        _warn(f"Stem engine '{engine}' failed ({e}); using FFmpeg phase cancellation instead.")
+
+    _warn(
+        "Vocal isolation is not available for this job: the vocals track is the full mix, "
+        "so lyric timing may be less accurate."
+    )
 
     # Fallback / FFmpeg engine
     print(f"Running FFmpeg phase cancellation on {audio_path}...")

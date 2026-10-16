@@ -21,6 +21,7 @@ Public API (identical signatures to old module):
 """
 
 import os
+os.environ.setdefault("USE_TF", "0")
 import sys
 import json
 import re
@@ -685,6 +686,8 @@ def align(
         _orig_torch_load = torch.load
         def _patched_load(*args, **kwargs):
             kwargs['weights_only'] = False
+            if not torch.cuda.is_available() and not kwargs.get('map_location'):
+                kwargs['map_location'] = 'cpu'
             return _orig_torch_load(*args, **kwargs)
         torch.load = _patched_load
         # Also patch internal serialization entry point used by lightning_fabric
@@ -697,6 +700,8 @@ def align(
             if hasattr(_lfcio, '_load'):
                 def _patched_lf_load(path_or_url, map_location=None, **kwargs):
                     # Ignore 'weights_only' kwarg from pytorch_lightning — always use False
+                    if not torch.cuda.is_available() and not map_location:
+                        map_location = 'cpu'
                     return _orig_torch_load(path_or_url, map_location=map_location, weights_only=False)
                 _lfcio._load = _patched_lf_load
                 print('[OK] lightning_fabric._load patched')

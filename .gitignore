@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 uploads/
 outputs/
+youtube_downloads/
 aligners/alignments/
 *.mp4
 *.m4a
@@ -12,3 +13,4 @@ aligners/alignments/
 .model_cache/
 alignments/
 test_out/
+.freebuff/
