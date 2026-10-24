@@ -27,6 +27,7 @@ import json
 import re
 import argparse
 import unicodedata
+from difflib import SequenceMatcher
 from typing import List, Optional, Tuple
 
 try:
@@ -44,8 +45,7 @@ except Exception:
 MAX_WORD_GAP_SEC      = 6.0   # Internal word gap larger than this is redistributed
 MAX_FRAGMENT_SEC      = 15.0  # Fragment longer than this is flagged / redistributed
 MIN_LINE_DUR          = 0.15  # Minimum fragment duration
-TYPICAL_WORD_DUR      = 0.35  # Fallback word duration when interpolating
-INTRO_PUSH_STEP       = 5.0   # Max seconds to push unmatched intro words back
+WORDS_SEC_PER_LINE    = 0.6   # Singing pace used to budget a line's duration
 
 COST_MATCH   = 0.0
 COST_PARTIAL = 0.5
@@ -140,14 +140,28 @@ def _needs_char_tokenization(lang: str) -> bool:
 def _tokenize(line: str, lang: str = "en") -> List[str]:
     """Split a lyric line into tokens.
     For CJK/Thai: one character per token (skipping whitespace).
-    For all others: whitespace split.
+    For all others: whitespace split, then elisions and hyphenated repeats are
+    split too — "pa'entro" and "ay-ay-ay" are sung as separate words, so the
+    transcriber emits them separately and a single token can never match.
     """
     s = str(line or "").strip()
     if not s:
         return []
     if _needs_char_tokenization(lang):
         return [ch for ch in s if not ch.isspace()]
-    return [t for t in re.split(r"\s+", s) if t]
+    tokens: List[str] = []
+    for tok in re.split(r"\s+", s):
+        if not tok:
+            continue
+        parts = [p for p in re.split(r"['\u2019\-]+", tok) if p]
+        # Only split when both halves are words in their own right; a trailing
+        # one-letter elision ("concentra'o") is better kept whole, since the
+        # transcriber usually hears it as one word.
+        if len(parts) > 1 and all(len(p) >= 2 for p in parts):
+            tokens.extend(parts)
+        else:
+            tokens.append(tok)
+    return tokens
 
 
 # ---------------------------------------------------------------------------
@@ -242,6 +256,31 @@ def _ensure_wav(audio_path: str) -> str:
 # Global DP aligner
 # ---------------------------------------------------------------------------
 
+def _token_similarity(uw: str, aw: str) -> float:
+    """
+    Score a normalised lyric token against a normalised transcript token,
+    lower is better.
+
+    Exact, substring, common-prefix and close-spelling tokens all count as
+    matches. The transcriber truncates and misspells slang ("concentra'o" comes
+    back as "concentrao", "dime" as "dime"), and refusing those left most words
+    unmatched and therefore interpolated.
+    """
+    if not uw or not aw:
+        return COST_MISMATCH
+    if uw == aw:
+        return COST_MATCH
+
+    shorter, longer = (uw, aw) if len(uw) <= len(aw) else (aw, uw)
+    if len(shorter) >= 3 and longer.startswith(shorter):
+        return COST_PARTIAL
+    if len(shorter) >= 3 and shorter in longer:
+        return COST_PARTIAL
+    if min(len(uw), len(aw)) >= 4 and SequenceMatcher(None, uw, aw).ratio() >= 0.8:
+        return COST_PARTIAL
+    return COST_MISMATCH
+
+
 def _dp_match(user_words: List[str], asr_words: List[dict]) -> dict:
     """
     Align user_words against asr_words using edit-distance DP.
@@ -264,12 +303,7 @@ def _dp_match(user_words: List[str], asr_words: List[dict]) -> dict:
         uw = _norm_word(user_words[i - 1])
         for j in range(1, m + 1):
             aw = _norm_word(asr_words[j - 1].get("word", ""))
-            if uw and aw and uw == aw:
-                sub = COST_MATCH
-            elif uw and aw and min(len(uw), len(aw)) >= 3 and (uw in aw or aw in uw):
-                sub = COST_PARTIAL
-            else:
-                sub = COST_MISMATCH
+            sub = _token_similarity(uw, aw)
             dp[i][j] = min(
                 dp[i - 1][j - 1] + sub,
                 dp[i - 1][j] + COST_MISS_USER,
@@ -281,12 +315,7 @@ def _dp_match(user_words: List[str], asr_words: List[dict]) -> dict:
     while i > 0 and j > 0:
         uw = _norm_word(user_words[i - 1])
         aw = _norm_word(asr_words[j - 1].get("word", ""))
-        if uw and aw and uw == aw:
-            sub = COST_MATCH
-        elif uw and aw and min(len(uw), len(aw)) >= 3 and (uw in aw or aw in uw):
-            sub = COST_PARTIAL
-        else:
-            sub = COST_MISMATCH
+        sub = _token_similarity(uw, aw)
         if abs(dp[i][j] - (dp[i - 1][j - 1] + sub)) < 1e-9 and sub <= COST_PARTIAL:
             mapping[i - 1] = j - 1
             i -= 1; j -= 1
@@ -324,10 +353,17 @@ def _line_bounds_from_anchors(
         if s is not None
     ]
 
+    # A line is sung in one breath, so its words sit close together. When a line
+    # would be given more time than it can possibly take, either because its
+    # anchors are spread over a repeated hook or because none of its words were
+    # matched at all, it swallows the silence and pushes every later line off.
+    budget = min(MAX_FRAGMENT_SEC, max(2.0, WORDS_SEC_PER_LINE * n_words + 1.0))
+
     if not matched:
-        # No matches — use a proportional slot after prev_frag_end
-        slot = min(MAX_FRAGMENT_SEC, (next_frag_start or audio_duration) - prev_frag_end)
-        slot = max(MIN_LINE_DUR * 2, slot / max(n_words, 1) * n_words)
+        # No matches — take the words' own budget from where the last line ended
+        # rather than stretching across the whole gap to the next line.
+        slot = min(budget, (next_frag_start or audio_duration) - prev_frag_end)
+        slot = max(MIN_LINE_DUR * 2, slot)
         return (
             max(prev_frag_end + 0.05, prev_frag_end),
             min(prev_frag_end + slot, audio_duration),
@@ -336,14 +372,12 @@ def _line_bounds_from_anchors(
     raw_start = matched[0][0]
     raw_end   = matched[-1][1]
 
-    # If the matched span is too long, there's likely a silence jump inside.
-    # In that case, trust only the densely-matched cluster at the beginning,
-    # trimming the end to raw_start + MAX_FRAGMENT_SEC.
-    if raw_end - raw_start > MAX_FRAGMENT_SEC:
-        # Walk through matched words; stop at first gap > MAX_WORD_GAP_SEC
+    # Extra matches far from the start belong to another repetition of the same
+    # words (a hook, a chant, an ad-lib), so keep only the dense cluster.
+    if raw_end - raw_start > budget:
         cluster_end = matched[0][1]
         for s, e in matched[1:]:
-            if s - cluster_end > MAX_WORD_GAP_SEC:
+            if s - cluster_end > MAX_WORD_GAP_SEC or e - raw_start > budget:
                 break
             cluster_end = e
         raw_end = cluster_end
@@ -394,31 +428,32 @@ def _fill_word_gaps(
             j += 1
 
         count = j - i
-        # Previous anchor
-        prev_anchor_end = words[i - 1]["end"] if i > 0 else frag_start
-        # Next anchor
+        # The previous matched word's end and the next matched word's start
+        # bracket this chunk. Spread the chunk over that whole interval so the
+        # words reach the next anchor instead of bunching at one end, which is
+        # what made lines finish early and drift between runs.
+        prev_anchor_end   = words[i - 1]["end"]   if i > 0 else frag_start
         next_anchor_start = words[j]["start"] if j < n else frag_end
 
-        # Clamp raw gap to MAX_WORD_GAP_SEC
-        available = min(next_anchor_start - prev_anchor_end, MAX_WORD_GAP_SEC)
-        available = max(available, MIN_LINE_DUR * count)
-
-        if i == 0 and not any(matched_flags):
-            # Fully unmatched line — distribute evenly over frag budget
-            span  = frag_end - frag_start
-            step  = min(span / count, TYPICAL_WORD_DUR * 2)
-            start = frag_start
-        elif i == 0:
-            # Unmatched block at beginning — push backwards from next anchor
-            step  = min(INTRO_PUSH_STEP, available / count)
-            start = max(frag_start, next_anchor_start - count * step)
+        if i == 0 and j == n:
+            # Fully unmatched line — distribute evenly over the fragment budget
+            gap_start, gap_end = frag_start, frag_end
+            span = gap_end - gap_start
         else:
-            step  = min(available / count, TYPICAL_WORD_DUR * 2)
-            start = prev_anchor_end + 0.03
+            gap_start = prev_anchor_end + (0.03 if i > 0 else 0.0)
+            gap_end   = next_anchor_start
+            # A wide gap means lyrics are missing from the song; keep the chunk
+            # near the previous anchor rather than stretching it far ahead.
+            span = max(MIN_LINE_DUR * count, min(gap_end - gap_start, MAX_WORD_GAP_SEC))
+
+        step  = span / count
+        start = gap_start
 
         for k in range(i, j):
             words[k]["start"] = round(start + (k - i) * step, 3)
-            words[k]["end"]   = round(words[k]["start"] + max(step * 0.85, MIN_LINE_DUR), 3)
+            words[k]["end"]   = round(
+                min(gap_end, words[k]["start"] + max(step * 0.85, MIN_LINE_DUR)), 3
+            )
 
         i = j
 

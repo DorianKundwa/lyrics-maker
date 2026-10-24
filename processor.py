@@ -139,6 +139,48 @@ def parse_lyrics(lyrics_path: str | Path) -> list[tuple[float | None, str]]:
     return [(None, line) for line in lines]
 
 
+def _anchor_to_vocal_onset(
+    timed: list[dict],
+    vocal_onset: float,
+    tolerance: float = 1.0,
+    max_shift: float = 3.0,
+) -> list[dict]:
+    """
+    If the aligner starts the first lyric well after the vocals really begin, the
+    whole timeline is late by that same amount. Shift every line and word by it so
+    the lyrics stay in sync with the audio.
+
+    The shift is capped at `max_shift` seconds: the onset detector works on the
+    stem's own loudness, so a breath or backing vocal early in the track can make
+    it report an onset far before the singing, and pulling the whole timeline back
+    by that much would break a song that was already aligned.
+    """
+    if not timed:
+        return timed
+    delta = float(vocal_onset) - float(timed[0]["start"])
+    if delta >= -tolerance:
+        # Only pull the timeline earlier when the aligner started it late by more than tolerance.
+        return timed
+    if -delta > max_shift:
+        print(
+            f"Vocal onset {float(vocal_onset):.2f}s is {-delta:.2f}s before the first "
+            f"lyric line; too far to trust (max {max_shift:.1f}s), keeping alignment as is."
+        )
+        return timed
+    shifted = []
+    for item in timed:
+        new = dict(item)
+        new["start"] = max(0.0, float(item["start"]) + delta)
+        new["end"] = max(new["start"] + 0.1, float(item["end"]) + delta)
+        if item.get("words"):
+            new["words"] = [
+                {**w, "start": max(0.0, w["start"] + delta), "end": max(0.0, w["end"] + delta)}
+                for w in item["words"]
+            ]
+        shifted.append(new)
+    return shifted
+
+
 def assign_timestamps(
     lyrics: list[tuple[float | None, str]],
     total_duration: float,
@@ -739,6 +781,26 @@ def generate_lyrics_video(
                     seg["text"] = clean_text
                     timed.append(seg)
             timed = timed or timed_raw
+            # The forced aligner places every word on the audio itself, so the
+            # onset-anchoring correction is only for the transcribe-then-match
+            # fallbacks, which can start the first line too late.
+            engine = ""
+            try:
+                with open(align_json, "r", encoding="utf-8") as fh:
+                    engine = str(json.load(fh).get("engine", ""))
+            except Exception:
+                pass
+            if engine == "mms_forced_align":
+                print("Forced alignment used; onset anchoring not needed.")
+            else:
+                try:
+                    from aligners.audio_utils import detect_first_vocal_onset
+                    vocal_onset = detect_first_vocal_onset(str(vocals_path))
+                    if vocal_onset is not None:
+                        print(f"First vocal onset on the vocal stem: {vocal_onset:.2f}s")
+                        timed = _anchor_to_vocal_onset(timed, vocal_onset)
+                except Exception as onset_err:
+                    print(f"Vocal onset anchoring skipped: {onset_err}")
         except Exception as e:
             print(f"Alignment engine failed: {e}. Falling back to even spacing.")
             timed = assign_timestamps(parsed, duration)

@@ -343,6 +343,46 @@ def separate_stems(input_path, output_dir=None, prefer='auto'):
         print(f"Error separating stems: {e}")
         return None, None, None
 
+def detect_first_vocal_onset(vocals_path, window_sec=0.05, hold_sec=0.5, drop_db=30.0):
+    """
+    Find when the lead vocal first becomes audible on the isolated vocal stem.
+
+    Each window's RMS is compared with the stem's own loudest window. The vocal
+    counts as started once it stays within `drop_db` of that peak for `hold_sec`.
+    Working on the vocal stem (not the full mix) keeps drums and bass from
+    triggering it.
+
+    Returns the onset in seconds, or None if it cannot be determined.
+    """
+    try:
+        import numpy as np
+        y, sr = _load_wav_array(vocals_path)
+        if y is None or sr <= 0 or len(y) == 0:
+            return None
+        win = max(1, int(sr * window_sec))
+        n = len(y) // win
+        if n == 0:
+            return None
+        frames = y[:n * win].reshape(n, win)
+        rms = np.sqrt(np.mean(frames ** 2, axis=1))
+        peak = float(rms.max())
+        if peak <= 0:
+            return None
+        thresh = peak * (10 ** (-drop_db / 20.0))
+        hold_n = max(1, int(round(hold_sec / window_sec)))
+        if hold_n > n:
+            return None
+        above = (rms >= thresh).astype(int)
+        run = np.convolve(above, np.ones(hold_n, dtype=int), mode="valid")
+        hits = np.nonzero(run == hold_n)[0]
+        if hits.size == 0:
+            return None
+        return float(hits[0] * window_sec)
+    except Exception as e:
+        print(f"First vocal onset detection failed: {e}")
+        return None
+
+
 def _load_wav_array(path):
     try:
         import numpy as np

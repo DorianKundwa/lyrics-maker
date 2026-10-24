@@ -126,6 +126,36 @@ lyrics-video-maker/
 
 ---
 
+## Lyric alignment
+
+When the lyrics carry no timestamps, the engines are tried in this order:
+
+1. **MMS_FA forced alignment** — `aligners/forced_align_mms.py` aligns the *known*
+   lyric words to the isolated vocal with a CTC model, so timing comes from the audio
+   rather than from a transcript. Downloads a ~1.2 GB checkpoint on first use and needs
+   torchaudio 2.6–2.8 (`torchaudio.functional.forced_align` was removed in 2.9).
+2. **WhisperX** — transcribes the vocal, then matches transcript words to the lyrics.
+3. **Aeneas / heuristic** — last-resort fallbacks.
+
+Measured on five Spanish songs from JamendoLyrics with word-level reference timings,
+the forced aligner places **93.7%** of word onsets within ±0.3 s (mean error 0.06–0.22 s
+on four of the five tracks) against **30.8%** for WhisperX. The one weak track still
+beats the old path (76.3% vs 3.3%); its stalled lines are marked `suspicious` in the
+alignment JSON with a reason.
+
+Re-run the measurement:
+
+```bash
+python tools/eval_alignment.py --engine forced
+python tools/eval_alignment.py --engine whisperx
+```
+
+Runtime on CPU: roughly 1–2 minutes of alignment per song for the forced engine,
+several minutes for WhisperX. Details in
+[docs/superpowers/specs/2026-10-24-lyrics-alignment-results.md](docs/superpowers/specs/2026-10-24-lyrics-alignment-results.md).
+
+---
+
 ## Tips
 
 - For long songs (4+ minutes) rendering takes 2–5 minutes. This is normal — FFmpeg is encoding 1080p video.
