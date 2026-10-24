@@ -74,6 +74,33 @@ def concat_audio(files: list[Path], output: Path) -> Path:
 
 # ─── Lyrics Parsing ─────────────────────────────────────────────────────────
 
+# Genius section header pattern: [Verse 1: Artist], [Chorus], [Hook], [Bridge], etc.
+_GENIUS_SECTION_RE = re.compile(
+    r"\["
+    r"(?:Verse|Chorus|Hook|Bridge|Pre-Chorus|Outro|Intro|Interlude|Refrain|Skit|Spoken|Breakdown|Drop|Ad-?Libs?|Instrumental|Coda|Transition|Repeat|Tag|Part|Section)[^\]]*"
+    r"\]",
+    re.IGNORECASE,
+)
+
+# A whole line in square brackets is a section header in any language (Intro, Verso,
+# Coro, Puente, Outro, ...). Sung lyrics never sit alone inside [].
+_BRACKET_LINE_RE = re.compile(r"^\s*\[[^\]]*\]\s*$")
+
+# Genius page title line, e.g. [Letra de "Dame Hombro"] or Lyrics for "Song".
+_GENIUS_TITLE_RE = re.compile(r"^\s*\[?\s*(?:Letra de|Lyrics for|Lyrics)\b.*$", re.IGNORECASE)
+
+# Genius uses (...) for annotations: crowd ad-libs, sound effects, stage directions,
+# repeats like (x4), featured artist credits. None of them are sung lyrics.
+_PAREN_ANNOTATION_RE = re.compile(r"\([^)]*\)")
+
+
+def _clean_genius_line(line: str) -> str:
+    """Strip Genius structural annotations ([Chorus], (Chay, chay)) from a lyric line."""
+    line = _GENIUS_SECTION_RE.sub("", line)
+    line = _PAREN_ANNOTATION_RE.sub("", line)
+    return " ".join(line.split())
+
+
 def parse_lyrics(lyrics_path: str | Path) -> list[tuple[float | None, str]]:
     """
     Parse lyrics file.
@@ -92,19 +119,23 @@ def parse_lyrics(lyrics_path: str | Path) -> list[tuple[float | None, str]]:
         result = []
         for mm, ss, cs, line in matches:
             ts = int(mm) * 60 + int(ss) + int(cs) / 100
-            stripped = line.strip()
+            stripped = _clean_genius_line(line.strip())
             if stripped:          # skip blank / metadata lines that are empty
                 result.append((ts, stripped))
         if result:
             return sorted(result, key=lambda x: x[0])
 
-    # Plain text – strip blank lines and section headers like [Chorus]
+    # Plain text – strip blank lines and section headers like [Chorus], [Verse 1], etc.
     lines = []
     for l in text.splitlines():
         s = l.strip()
-        if not s: continue
-        if re.match(r"^\[.*?\]$", s): continue
-        lines.append(s)
+        if not s:
+            continue
+        if _BRACKET_LINE_RE.match(s) or _GENIUS_TITLE_RE.match(s):
+            continue
+        cleaned = _clean_genius_line(s)
+        if cleaned:
+            lines.append(cleaned)
     return [(None, line) for line in lines]
 
 
@@ -690,8 +721,24 @@ def generate_lyrics_video(
         print("Un-timed lyrics detected. Running intelligent alignment on vocals...")
         try:
             from aligners import align, parse_alignment_json
-            align_json = align(str(vocals_path), str(lyrics_path))
-            timed = parse_alignment_json(align_json)
+            # Align a pre-cleaned lyrics file: the aligner must never time section
+            # headers like [Chorus] or annotations like (Chay, chay), or the real
+            # lyrics start late.
+            cleaned_lyrics_path = work_dir / "_cleaned_lyrics.txt"
+            cleaned_lyrics_path.write_text(
+                "\n".join(txt for _, txt in parsed),
+                encoding="utf-8",
+            )
+            align_json = align(str(vocals_path), str(cleaned_lyrics_path))
+            timed_raw = parse_alignment_json(align_json)
+            timed = []
+            for seg in timed_raw:
+                clean_text = _clean_genius_line(seg.get("text", ""))
+                if clean_text:
+                    seg = dict(seg)
+                    seg["text"] = clean_text
+                    timed.append(seg)
+            timed = timed or timed_raw
         except Exception as e:
             print(f"Alignment engine failed: {e}. Falling back to even spacing.")
             timed = assign_timestamps(parsed, duration)

@@ -30,6 +30,29 @@ BROWSER_USER_AGENT = (
 
 LyricsResult = dict  # {"source": str, "synced": bool, "text": str}
 
+# Genius adds structure that is not sung: section headers in any language
+# ([Intro: Bulin 47], [Verso: ...], [Coro]), the page title line, and
+# parenthetical annotations ((Chay, chay), (x4)).
+_BRACKET_LINE_RE = re.compile(r"^\s*\[[^\]]*\]\s*$")
+_GENIUS_TITLE_RE = re.compile(r"^\s*\[?\s*(?:Letra de|Lyrics for|Lyrics)\b.*$", re.IGNORECASE)
+_INLINE_BRACKET_RE = re.compile(r"\[[^\]]*\]")
+_PAREN_RE = re.compile(r"\([^()]*\)")
+
+
+def _clean_genius_text(text: str) -> str:
+    """Keep only the lines a singer sings, matching what the aligner receives."""
+    out = []
+    for raw in text.splitlines():
+        s = raw.strip()
+        if not s or _BRACKET_LINE_RE.match(s) or _GENIUS_TITLE_RE.match(s):
+            continue
+        s = _INLINE_BRACKET_RE.sub("", s)
+        s = _PAREN_RE.sub("", s)
+        s = " ".join(s.split())
+        if s:
+            out.append(s)
+    return "\n".join(out)
+
 
 def _norm(s: str) -> str:
     s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode()
@@ -98,7 +121,7 @@ def _genius(title: str, artist: str) -> Optional[LyricsResult]:
             for br in box.find_all("br"):
                 br.replace_with("\n")
             parts.append(box.get_text())
-        text = "\n".join(parts).strip()
+        text = _clean_genius_text("\n".join(parts))
         if text:
             return {"source": "Genius", "synced": False, "text": text}
     return None
