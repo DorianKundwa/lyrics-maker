@@ -4,7 +4,7 @@ CTC forced alignment of KNOWN lyrics (MMS_FA / torchaudio).
 Unlike the WhisperX path, this never transcribes: the lyric words themselves are
 the reference, so every word is placed on the audio instead of being guessed from
 a transcript. On the Jamendo Spanish tracks measured for this project it puts
-~96% of word onsets within 0.3 s, against ~29% for the transcribe-then-match path.
+93.7% of word onsets within 0.3 s, against 30.8% for the transcribe-then-match path.
 
 Public API matches the other engines:
     align_lyrics(audio_path, lyrics_path, output_json=None, language=None) -> str

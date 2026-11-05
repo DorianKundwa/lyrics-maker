@@ -5,6 +5,11 @@ Run with: python test_styles.py
 
 import sys, os, re, traceback
 
+# The Windows console defaults to cp1252 and cannot print the check marks, which
+# used to crash the run on the first failing check.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 sys.path.insert(0, os.path.dirname(__file__))
 from processor import generate_ass, parse_lyrics, assign_timestamps
 

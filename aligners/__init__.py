@@ -1,12 +1,20 @@
 import os
 import traceback
 
+DEFAULT_ENGINE = "combo"
+
+
+def _engine() -> str:
+    """Alignment engine choice: combo (default), forced, auto, whisperx, ..."""
+    return os.environ.get("LYRIC_ALIGN_ENGINE", DEFAULT_ENGINE).strip().lower()
+
+
 def align(audio_path: str, lyrics_path: str, output_json: str = None, language: str = None) -> str:
     """
     Unified alignment function.
-    Tries MMS_FA forced alignment of the known lyrics -> WhisperX -> Aeneas -> Heuristic.
-    Language is auto-detected by the transcription engines; the forced aligner
-    does not need it.
+    Tries forced alignment (with Whisper repair for flagged lines) -> WhisperX
+    -> Aeneas -> Heuristic. Language is auto-detected by the transcription
+    engines; the forced aligner does not need it.
     Returns the path to the generated JSON file.
     """
     if output_json is None:
@@ -14,19 +22,35 @@ def align(audio_path: str, lyrics_path: str, output_json: str = None, language: 
         base = os.path.splitext(os.path.basename(audio_path))[0]
         output_json = os.path.join(ALIGN_DIR, f"{base}_alignment.json")
 
-    # 1. CTC forced alignment of the KNOWN lyrics (no transcription in the loop).
-    #    This is the accurate path: every lyric word is placed on the audio.
-    try:
-        from .forced_align_mms import align_lyrics as forced_align
-        print("Attempting MMS_FA forced alignment of the supplied lyrics...")
-        res = forced_align(audio_path, lyrics_path, output_json, language=language)
-        if res and os.path.exists(res):
-            print("Forced alignment succeeded.")
-            return res
-    except Exception as e:
-        print(f"Forced alignment skipped/failed: {e}")
+    engine = _engine()
 
-    # 2. Try WhisperX (auto-detects language from audio)
+    # 1. CTC forced alignment of the KNOWN lyrics (no transcription in the loop),
+    #    plus a Whisper second opinion on the lines the forced aligner flags.
+    if engine in ("combo", "auto"):
+        try:
+            from .alignment_combo import align_lyrics as combo_align
+            print("Attempting MMS_FA forced alignment with Whisper repair for flagged lines...")
+            res = combo_align(audio_path, lyrics_path, output_json, language=language)
+            if res and os.path.exists(res):
+                print("Combo alignment succeeded.")
+                return res
+        except Exception as e:
+            print(f"Combo alignment skipped/failed: {e}")
+
+    # 2. Plain forced alignment (also the fallback when the combo path fails
+    #    before producing a file).
+    if engine in ("combo", "auto", "forced"):
+        try:
+            from .forced_align_mms import align_lyrics as forced_align
+            print("Attempting MMS_FA forced alignment of the supplied lyrics...")
+            res = forced_align(audio_path, lyrics_path, output_json, language=language)
+            if res and os.path.exists(res):
+                print("Forced alignment succeeded.")
+                return res
+        except Exception as e:
+            print(f"Forced alignment skipped/failed: {e}")
+
+    # 3. Try WhisperX (auto-detects language from audio)
     try:
         import whisperx
         import torch
@@ -39,7 +63,7 @@ def align(audio_path: str, lyrics_path: str, output_json: str = None, language: 
     except Exception as e:
         print(f"WhisperX alignment skipped/failed: {e}")
 
-    # 3. Try Aeneas (passes None → falls back to 'eng' internally)
+    # 4. Try Aeneas (passes None → falls back to 'eng' internally)
     try:
         import aeneas
         from .alignment_aeneas import align as aeneas_align
@@ -51,7 +75,7 @@ def align(audio_path: str, lyrics_path: str, output_json: str = None, language: 
     except Exception as e:
         print(f"Aeneas alignment skipped/failed: {e}")
 
-    # 4. Fallback to Heuristic (auto-detects language from lyrics text)
+    # 5. Fallback to Heuristic (auto-detects language from lyrics text)
     print("Falling back to Heuristic alignment...")
     try:
         from .alignment_whisperx import _heuristic_align
@@ -64,6 +88,7 @@ def align(audio_path: str, lyrics_path: str, output_json: str = None, language: 
         traceback.print_exc()
 
     raise RuntimeError("All alignment engines failed.")
+
 
 def parse_alignment_json(json_path: str):
     from .alignment_whisperx import parse_alignment_json as parse_json

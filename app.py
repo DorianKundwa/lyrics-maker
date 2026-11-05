@@ -43,6 +43,10 @@ ALIGN_DIR  = Path(__file__).parent / "alignments"
 ALIGN_DIR.mkdir(exist_ok=True)
 JOBS_STORE = ALIGN_DIR / "_jobs_store.json"
 
+# Editor audio/background copies and engine JSONs are kept this long so old
+# jobs can be re-rendered; after that they are pruned on the next submission.
+ALIGNMENT_RETENTION_SECONDS = 7 * 24 * 60 * 60
+
 _rerender_jobs: dict[str, dict] = {}
 
 
@@ -101,6 +105,32 @@ def _parse_srt(srt_path: Path) -> list:
     return segments
 
 
+def _segments_from_timed(timed: Optional[list]) -> list:
+    """Convert the renderer's timed segments into Lyric Editor segments.
+
+    Keeping the word arrays is what lets the editor re-render with the original
+    karaoke highlighting instead of falling back to plain per-line text.
+    """
+    segments = []
+    for index, item in enumerate(timed or []):
+        try:
+            start = float(item["start"])
+            end = float(item["end"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        segments.append({
+            "index":      index,
+            "start":      round(start, 3),
+            "end":        round(end, 3),
+            "text":       str(item.get("text", "")),
+            "y_offset":   0,
+            "words":      item.get("words") or [],
+            "orig_start": round(start, 3),
+            "orig_end":   round(end, 3),
+        })
+    return segments
+
+
 def _save_alignment_for_editor(
     job_id: str,
     audio_path,
@@ -116,6 +146,7 @@ def _save_alignment_for_editor(
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
     lyric_style: str = "classic",
+    timed: Optional[list] = None,
 ) -> None:
     """
     Called after a successful render (before cleanup).
@@ -123,11 +154,14 @@ def _save_alignment_for_editor(
     • Copies source audio + background to ALIGN_DIR/<job_id>/ for re-renders.
     • Saves <job_id>_alignment.json consumed by the Lyric Editor.
     """
-    srt_path = out_dir / "lyrics.srt"
-    if not srt_path.exists():
-        return
-
-    segments       = _parse_srt(srt_path)
+    segments = _segments_from_timed(timed)
+    if not segments:
+        # Older jobs (and any render that could not return its timings) still
+        # fall back to the line-level SRT.
+        srt_path = out_dir / "lyrics.srt"
+        if not srt_path.exists():
+            return
+        segments = _parse_srt(srt_path)
     total_duration = 0.0
     lv             = out_dir / "lyrics_video.mp4"
     if lv.exists():
@@ -183,12 +217,12 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/")
 def index():
-    return FileResponse(Path("static/index.html"))
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/editor")
 def editor():
-    return FileResponse(Path("static/editor.html"))
+    return FileResponse(STATIC_DIR / "editor.html")
 
 
 # ─── Upload & Process ────────────────────────────────────────────────────────
@@ -230,6 +264,46 @@ def _cleanup_old_outputs():
                 continue
             shutil.rmtree(d, ignore_errors=True)
 
+
+def _cleanup_old_alignments() -> None:
+    """Prune editor assets and engine JSONs older than the retention window.
+
+    Every completed job keeps a copy of its audio and background for later
+    re-renders. Without this the folder grows by several MB per song forever.
+    """
+    now = time.time()
+    try:
+        entries = list(ALIGN_DIR.iterdir())
+    except OSError:
+        entries = []
+    for entry in entries:
+        if entry.name == JOBS_STORE.name:
+            continue
+        job_id = entry.name.split("_alignment", 1)[0] if entry.is_file() else entry.name
+        if _jobs.get(job_id, {}).get("status") in ("queued", "running"):
+            continue
+        try:
+            if now - entry.stat().st_mtime <= ALIGNMENT_RETENTION_SECONDS:
+                continue
+            if entry.is_dir():
+                shutil.rmtree(entry, ignore_errors=True)
+            else:
+                entry.unlink()
+        except OSError:
+            pass
+
+    # Engine output is an intermediate cache; nothing reads it after the render.
+    engine_dir = BASE_DIR / "aligners" / "alignments"
+    if not engine_dir.exists():
+        return
+    for entry in engine_dir.glob("*.json"):
+        try:
+            if now - entry.stat().st_mtime > ALIGNMENT_RETENTION_SECONDS:
+                entry.unlink()
+        except OSError:
+            pass
+
+
 @app.post("/api/process")
 async def start_process(
     background_tasks: BackgroundTasks,
@@ -246,7 +320,7 @@ async def start_process(
     bg_color:    str = Form("#000000"),
     stem_engine: str = Form("demucs"),
     word_highlight: bool = Form(True),
-    language:    str = Form("en"),
+    language:    str = Form(""),
     active_color:   str = Form("#FFFFFF"),
     upcoming_color: str = Form("#FF0000"),
     sung_color:     str = Form("#FFFFFF"),
@@ -263,6 +337,7 @@ async def start_process(
         job_id = str(uuid.uuid4())
 
     _cleanup_old_outputs()
+    _cleanup_old_alignments()
     job_dir = UPLOAD_DIR / job_id
     out_dir = OUTPUT_DIR / job_id
     
@@ -325,7 +400,7 @@ async def _run_job(
     font_size: int = 72,
     stem_engine: str = "demucs",
     word_highlight: bool = True,
-    language: str = "en",
+    language: str = "",
     active_color: str = "#FFFFFF",
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
@@ -374,7 +449,7 @@ async def _run_job(
             # 3 — Lyrics video
             _set(job_id, step="Rendering lyrics video…", progress=65)
             lv_path = out_dir / "lyrics_video.mp4"
-            await run(
+            timed = await run(
                 proc.generate_lyrics_video,
                 bg_path, audio_path, vocals_path, lyrics_path, lv_path, outro_path, title, artist, font_name, font_size, word_highlight, language,
                 active_color, upcoming_color, sung_color, lyric_style, outro_text,
@@ -403,6 +478,7 @@ async def _run_job(
                     job_id, audio_path, bg_path, out_dir,
                     title, artist, font_name, font_size, word_highlight, language,
                     active_color, upcoming_color, sung_color, lyric_style,
+                    timed=timed,
                 )
                 _save_jobs_store()
             except Exception as exc:
@@ -686,6 +762,8 @@ async def _run_rerender(rerender_id: str, align_data: dict) -> None:
         active_color   = align_data.get("active_color",   "#FFFFFF")
         upcoming_color = align_data.get("upcoming_color", "#FF0000")
         sung_color     = align_data.get("sung_color",     "#FFFFFF")
+        lyric_style    = align_data.get("lyric_style",    "classic")
+        word_highlight = bool(align_data.get("word_highlight", True))
         out_dir.mkdir(parents=True, exist_ok=True)
         output_path = out_dir / "lyrics_video_corrected.mp4"
 
@@ -693,7 +771,7 @@ async def _run_rerender(rerender_id: str, align_data: dict) -> None:
         await run(
             proc.rerender_lyrics_video,
             bg_path, audio_path, segments, output_path, font_name, font_size,
-            active_color, upcoming_color, sung_color,
+            active_color, upcoming_color, sung_color, lyric_style, word_highlight,
         )
 
         job.update(

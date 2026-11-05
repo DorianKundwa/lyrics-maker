@@ -47,8 +47,10 @@ alignment JSON with a reason (`implausible pace for the line`), so a UI or a per
 spot them. The stalled lines were 2.1 s per word against 0.2–0.5 s for correctly placed
 ones.
 
-What is not solved: re-mapping a lyric group to a *different* occurrence (non-monotonic
-alignment). That needs section-level matching and is out of scope for this change.
+What is not solved by forced alignment alone: re-mapping a lyric group to a
+*different* occurrence (non-monotonic alignment). The combo engine below now
+handles the common case by searching back from the previous line; a line whose
+only correct occurrence is more than 15 s from that anchor is still left flagged.
 
 ## Runtime
 
@@ -56,10 +58,48 @@ alignment). That needs section-level matching and is out of scope for this chang
   ~1.2 GB MMS_FA model download.
 - WhisperX path: several minutes per song.
 
+## Combo repair (measured 2026-11-05)
+
+The default engine is now `combo`: MMS_FA still places every known word, and only
+the lines its own checks flag (straddles a silence, impossible pace, duplicate
+placement) are re-checked with faster-whisper. The repair window starts at the end
+of the previous line instead of the flagged line's own forced start, because a
+parked line sits after the point where it is actually sung. A repair is accepted
+only when the transcript confirms at least 60% of that line's words. The repair
+language comes from the lyrics (`langdetect`), since short windows and isolated
+vocals misdetect the language (Spanish singing was read as English, then Basque).
+
+**Same five mix tracks, same harness** (`--engine combo`):
+
+| Track | Words | Forced | Combo | Combo MAE |
+|---|---|---|---|---|
+| 10. Disparan - criatura | 194 | 95.9% | 95.9% | 0.057 s |
+| Guayeteo - JhoyKing | 340 | 97.9% | 97.9% | 0.054 s |
+| Caralibro - Vagos Permanentes | 211 | 76.3% | **80.6%** | 4.443 s |
+| Baila - Alfonso Lugo | 282 | 99.6% | 99.6% | 0.027 s |
+| Te Recuerdo - Wilson Way | 458 | 94.1% | 94.1% | 0.218 s |
+| **All** | **1485** | **93.7%** | **94.3%** | **0.724 s** |
+
+Three Caralibro lines were repaired; the other four tracks produced no flagged
+lines, so no ASR window ran and their timings are unchanged.
+
+**Vocal stem (the app's own path).** Demucs `htdemucs` on Caralibro, then
+alignment on `vocals.wav`: forced **99.5%** PCO@0.3, MAE **0.053 s** (the mix was
+76.3%). One line remained flagged and the repair had nothing to accept, so combo
+is also 99.5%. The documented Caralibro failure is therefore mostly an artifact
+of aligning the full mix; the app's stem path is already at the ceiling for this
+track.
+
+Runtime on CPU for the 4.6-minute Caralibro track: Demucs 224.8 s, forced
+201.5 s. The combo run (forced stage plus the language vote and the repair
+windows) took 151–164 s on warm caches. Clean tracks pay no speech recognition
+at all; the only extra cost is the six-window language vote.
+
 ## Reproducing
 
 ```bash
 python tools/eval_alignment.py --engine forced
+python tools/eval_alignment.py --engine combo
 python tools/eval_alignment.py --engine whisperx
 python -m pytest tests/ -q
 ```

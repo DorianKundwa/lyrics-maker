@@ -2,6 +2,7 @@
 
 Usage:
     python tools/eval_alignment.py --engine forced --tracks 10._Disparan_-_criatura
+    python tools/eval_alignment.py --engine combo  --tracks ...
     python tools/eval_alignment.py --engine whisperx --tracks ...
 
 Metric (MIREX/Jamendo convention):
@@ -114,6 +115,8 @@ def run_engine(engine: str, track: dict, out_json: Path) -> list[Optional[list[f
     """Return predicted (start, end) per lyric word, in lyric order."""
     if engine == "forced":
         from aligners.forced_align_mms import align_lyrics
+    elif engine == "combo":
+        from aligners.alignment_combo import align_lyrics
     elif engine == "whisperx":
         # Call the WhisperX module directly: aligners.align() now dispatches to
         # the forced aligner first, which would measure the wrong engine.
@@ -150,7 +153,7 @@ def evaluate(engine: str, names: Sequence[str], tol: float = 0.3, quiet: bool = 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--engine", default="forced", choices=["forced", "whisperx"])
+    ap.add_argument("--engine", default="forced", choices=["forced", "combo", "whisperx"])
     ap.add_argument("--tracks", nargs="*", default=None)
     ap.add_argument("--tol", type=float, default=0.3)
     ap.add_argument("--json", default=None)

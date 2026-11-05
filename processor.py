@@ -29,11 +29,15 @@ else:
 # ─── Helpers ────────────────────────────────────────────────────────────────
 
 def seconds_to_ass(t: float) -> str:
-    """Convert float seconds → ASS timestamp  H:MM:SS.cc"""
-    h = int(t // 3600)
-    m = int((t % 3600) // 60)
-    s = int(t % 60)
-    cs = int(round((t - int(t)) * 100))
+    """Convert float seconds → ASS timestamp  H:MM:SS.cc
+
+    Rounding the whole value in centiseconds (instead of the fractional part)
+    keeps the result valid: 5.995 s becomes 6.00 s, never the malformed 5.100.
+    """
+    total_cs = max(0, int(round(float(t) * 100)))
+    h, rem = divmod(total_cs, 360_000)
+    m, rem = divmod(rem, 6_000)
+    s, cs = divmod(rem, 100)
     return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
 
 
@@ -101,29 +105,62 @@ def _clean_genius_line(line: str) -> str:
     return " ".join(line.split())
 
 
+# LRC time tags: [mm:ss], [mm:ss.xx] or [mm:ss.xxx]. `[offset:±ms]` shifts
+# every timestamp and is honoured by parse_lyrics.
+_LRC_TIME_RE = re.compile(r"\[(\d+):(\d{1,2})(?:[.:](\d{1,6}))?\]")
+_LRC_OFFSET_RE = re.compile(r"\[offset:\s*([+-]?\d+)\s*\]", re.IGNORECASE)
+
+
+def _lrc_fraction_seconds(fraction: str | None) -> float:
+    """LRC fractions are a decimal part of a second, whatever the digit count.
+
+    ``[00:05.5]``, ``[00:05.50]`` and ``[00:05.500]`` all mean 5.5 s. Treating
+    the digits as centiseconds made millisecond-precision files (common from
+    some taggers) run late: ``.500`` was read as five whole seconds.
+    """
+    if not fraction:
+        return 0.0
+    return int(fraction) / (10 ** len(fraction))
+
+
 def parse_lyrics(lyrics_path: str | Path) -> list[tuple[float | None, str]]:
     """
     Parse lyrics file.
     Supports:
-      • LRC format  [mm:ss.xx] text
+      • LRC format  [mm:ss.xx] text — any fraction length, several timestamps
+        per line, and a [offset:±ms] session offset
       • SRT-style   timestamp --> timestamp\\ntext
       • Plain text  (no timestamps, auto-timed later)
     Returns list of (timestamp_or_None, text).
     """
     text = Path(lyrics_path).read_text(encoding="utf-8", errors="replace")
 
-    # LRC
-    lrc_re = re.compile(r"\[(\d+):(\d+)[.:](\d+)\](.*)")
-    matches = lrc_re.findall(text)
-    if matches:
-        result = []
-        for mm, ss, cs, line in matches:
-            ts = int(mm) * 60 + int(ss) + int(cs) / 100
-            stripped = _clean_genius_line(line.strip())
-            if stripped:          # skip blank / metadata lines that are empty
-                result.append((ts, stripped))
-        if result:
-            return sorted(result, key=lambda x: x[0])
+    offset = 0.0
+    offset_match = _LRC_OFFSET_RE.search(text)
+    if offset_match:
+        try:
+            offset = int(offset_match.group(1)) / 1000.0
+        except ValueError:
+            offset = 0.0
+
+    # LRC. A line may carry more than one timestamp ("[00:10][00:42]chorus"),
+    # and lines without a time tag (metadata such as [ar:...]) are ignored.
+    timed_lines: list[tuple[float, str]] = []
+    for raw in text.splitlines():
+        tags = list(_LRC_TIME_RE.finditer(raw))
+        if not tags:
+            continue
+        body = raw[tags[-1].end():].strip()
+        cleaned = _clean_genius_line(body)
+        if not cleaned:
+            continue
+        for tag in tags:
+            mm, ss, fraction = tag.group(1), tag.group(2), tag.group(3)
+            ts = int(mm) * 60 + int(ss) + _lrc_fraction_seconds(fraction) + offset
+            timed_lines.append((max(0.0, round(ts, 3)), cleaned))
+
+    if timed_lines:
+        return sorted(timed_lines, key=lambda item: item[0])
 
     # Plain text – strip blank lines and section headers like [Chorus], [Verse 1], etc.
     lines = []
@@ -278,6 +315,39 @@ _LYRIC_STYLES: dict[str, dict] = {
 }
 
 
+def _words_fit_text(words: list, text: str) -> bool:
+    """Karaoke is only valid while the stored words still spell the line.
+
+    The editor can rewrite a line's text; its word timings then belong to the
+    old text, so highlighting them would put the wrong word on screen.
+    """
+    joined = " ".join(str(w.get("text", "")) for w in words).split()
+    return joined == str(text or "").split()
+
+
+def _shift_position_tags(dialogue: str, dx: int, dy: int) -> str:
+    """Move every \\pos()/\\move() in one dialogue line by (dx, dy) pixels."""
+    if not dx and not dy:
+        return dialogue
+
+    def shift_pos(match):
+        return f"\\pos({int(match.group(1)) + dx},{int(match.group(2)) + dy})"
+
+    def shift_move(match):
+        x1 = int(match.group(1)) + dx
+        y1 = int(match.group(2)) + dy
+        x2 = int(match.group(3)) + dx
+        y2 = int(match.group(4)) + dy
+        return f"\\move({x1},{y1},{x2},{y2}{match.group(5)})"
+
+    dialogue = re.sub(r"\\pos\((-?\d+),(-?\d+)\)", shift_pos, dialogue)
+    return re.sub(
+        r"\\move\((-?\d+),(-?\d+),(-?\d+),(-?\d+)((?:,-?\d+)*)\)",
+        shift_move,
+        dialogue,
+    )
+
+
 def generate_ass(
     timed_lyrics: list[dict],
     title: str = "",
@@ -322,6 +392,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     multi_mode     = sc.get("multi_line", None)
 
     for i, item in enumerate(timed_lyrics):
+        first_line = len(lines)
         start = item["start"]
         end   = item["end"]
         # For teleprompter styles: extend end to next event start to fill gaps
@@ -334,7 +405,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         words = item.get("words", [])
 
         # ── Build karaoke or plain text body ──────────────────────────────────
-        if words and word_highlight:
+        if words and word_highlight and _words_fit_text(words, item.get("text", "")):
             # \k: simple instant colour-swap per syllable.
             # SecondaryColour (upcoming_color) = un-sung text colour.
             # PrimaryColour  (active_color)    = sung text colour.
@@ -544,6 +615,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 f"Default,,0,0,0,,{line_text}"
             )
 
+        # The editor stores a per-segment offset; +y_offset moves text up.
+        dx = int(item.get("x_offset", 0) or 0)
+        dy = -int(item.get("y_offset", 0) or 0)
+        if dx or dy:
+            lines[first_line:] = [
+                _shift_position_tags(entry, dx, dy) for entry in lines[first_line:]
+            ]
+
     return "\n".join(lines)
 
 
@@ -653,7 +732,7 @@ def generate_thumbnail(
 
 # ─── Video Generation ────────────────────────────────────────────────────────
 
-_VIDEO_SCALE = "scale=1920:1080,setsar=1"
+_VIDEO_SCALE = "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1"
 
 _FFMPEG_BASE_IMAGE = [
     "ffmpeg", "-y",
@@ -744,7 +823,7 @@ def generate_lyrics_video(
     font_name: str = "Arial",
     font_size: int = 72,
     word_highlight: bool = True,
-    language: str = "en",
+    language: str = "",
     active_color: str = "#FFFFFF",
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
@@ -771,7 +850,9 @@ def generate_lyrics_video(
                 "\n".join(txt for _, txt in parsed),
                 encoding="utf-8",
             )
-            align_json = align(str(vocals_path), str(cleaned_lyrics_path))
+            align_json = align(
+                str(vocals_path), str(cleaned_lyrics_path), language=language or None
+            )
             timed_raw = parse_alignment_json(align_json)
             timed = []
             for seg in timed_raw:
@@ -790,7 +871,7 @@ def generate_lyrics_video(
                     engine = str(json.load(fh).get("engine", ""))
             except Exception:
                 pass
-            if engine == "mms_forced_align":
+            if engine in ("mms_forced_align", "forced_whisper_combo"):
                 print("Forced alignment used; onset anchoring not needed.")
             else:
                 try:
@@ -870,6 +951,10 @@ def generate_lyrics_video(
     ] + _VIDEO_ENCODE + [str(output_path)]
     subprocess.run(cmd, check=True, capture_output=True)
 
+    # Returned so the editor can keep word-level timings instead of re-reading
+    # the line-level SRT.
+    return timed
+
 
 def _ffmpeg_escape(text: str) -> str:
     """Escape text for use inside ffmpeg drawtext text= value."""
@@ -893,53 +978,50 @@ def _ass_escape_path(path: str) -> str:
 
 # ─── Editor Re-render Support ────────────────────────────────────────────────
 
-def generate_ass_with_positions(
-    segments: list,
-    font_name: str = "Arial",
-    font_size: int = 72,
-    active_color: str = "#FFFFFF",
-    upcoming_color: str = "#FF0000",
-    sung_color: str = "#FFFFFF",
-) -> str:
+def _retime_segment_words(segment: dict) -> dict:
+    """Rescale a segment's word timings onto its edited [start, end].
+
+    The editor changes a line's start/end but not every word, so the words are
+    mapped from the segment's original span onto its current one. A line whose
+    text was edited keeps its words too; generate_ass ignores them once they no
+    longer spell the line.
     """
-    Supports per-segment x_offset and y_offset.
-    y_offset: pixels from video centre; positive = up.
-    x_offset: pixels from video centre; positive = right.
-    Uses explicit \\pos() per dialogue line — no karaoke word-tagging.
-    """
-    header = f"""[Script Info]
-ScriptType: v4.00+
-PlayResX: 1920
-PlayResY: 1080
-WrapStyle: 0
-ScaledBorderAndShadow: yes
+    words = segment.get("words") or []
+    if not words:
+        return segment
+    try:
+        start = float(segment.get("start", 0.0))
+        end = float(segment.get("end", start))
+        orig_start = float(segment.get("orig_start", start))
+        orig_end = float(segment.get("orig_end", end))
+    except (TypeError, ValueError):
+        return segment
 
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font_name},{font_size},{_hex_to_ass(active_color)},{_hex_to_ass(upcoming_color)},&H00000000,&HAA000000,-1,0,0,0,100,100,2,0,1,4,3,5,60,60,0,1
+    old_span = orig_end - orig_start
+    new_span = end - start
+    if old_span <= 0 or new_span <= 0:
+        return segment
+    if abs(old_span - new_span) < 1e-6 and abs(orig_start - start) < 1e-6:
+        return segment
 
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-"""
-    cx, cy = 960, 540          # centre of 1920×1080
-    lines = [header]
+    scale = new_span / old_span
+    retimed = []
+    for word in words:
+        try:
+            word_start = float(word["start"])
+            word_end = float(word["end"])
+        except (KeyError, TypeError, ValueError):
+            retimed.append(word)
+            continue
+        new_start = start + (word_start - orig_start) * scale
+        new_end = start + (word_end - orig_start) * scale
+        new_start = min(max(new_start, start), max(start, end - 0.02))
+        new_end = min(max(new_end, new_start + 0.02), end)
+        retimed.append({**word, "start": round(new_start, 3), "end": round(new_end, 3)})
 
-    for seg in segments:
-        start    = float(seg.get("start", 0))
-        end      = float(seg.get("end",   0))
-        x_offset = int(seg.get("x_offset", 0))
-        y_offset = int(seg.get("y_offset", 0))
-        x_pos    = cx + x_offset   # +x_offset → text moves RIGHT
-        y_pos    = cy - y_offset   # +y_offset → text moves UP (lower ASS y value)
-
-        seg_text  = _ass_escape(seg.get("text", ""))
-        line_text = f"{{\\fad(150,300)\\an5\\pos({x_pos},{y_pos})}}{seg_text}"
-        lines.append(
-            f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-            f"Default,,0,0,0,,{line_text}"
-        )
-
-    return "\n".join(lines)
+    updated = dict(segment)
+    updated["words"] = retimed
+    return updated
 
 
 def rerender_lyrics_video(
@@ -952,23 +1034,33 @@ def rerender_lyrics_video(
     active_color: str = "#FFFFFF",
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",
+    lyric_style: str = "classic",
+    word_highlight: bool = True,
 ) -> None:
     """
     Re-render a lyrics video from Lyric Editor-corrected segments.
-    Generates a fresh ASS file with per-segment x/y positioning
-    then calls FFmpeg — no ML alignment step required.
+
+    Uses the same style presets and karaoke word timings as the original
+    render, plus the per-segment x/y offsets stored by the editor.
     """
     work_dir = Path(output_path).parent
     work_dir.mkdir(parents=True, exist_ok=True)
 
-    ass_content = generate_ass_with_positions(
-        segments, font_name=font_name, font_size=font_size,
-        active_color=active_color, upcoming_color=upcoming_color, sung_color=sung_color,
+    prepared = [_retime_segment_words(segment) for segment in segments]
+    ass_content = generate_ass(
+        prepared,
+        font_name=font_name,
+        font_size=font_size,
+        word_highlight=word_highlight,
+        active_color=active_color,
+        upcoming_color=upcoming_color,
+        sung_color=sung_color,
+        lyric_style=lyric_style,
     )
-    ass_path    = work_dir / "_corrected.ass"
+    ass_path = work_dir / "_corrected.ass"
     ass_path.write_text(ass_content, encoding="utf-8")
 
-    ass_escaped      = _ass_escape_path(str(ass_path))
+    ass_escaped = _ass_escape_path(str(ass_path))
     base_dir_escaped = _ass_escape_path(str(Path(__file__).parent.resolve()))
     vf = f"{_VIDEO_SCALE},subtitles={ass_escaped}:fontsdir={base_dir_escaped}"
 
