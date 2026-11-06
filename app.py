@@ -124,6 +124,12 @@ def _load_jobs_store() -> None:
             # Keep legacy completed records readable without rewriting the store
             # just because this field was added later.
             data["resumable"] = False
+        # Backfill top-level title/artist from params for records that pre-date
+        # the top-level field (they only stored it inside params).
+        if "title" not in data and isinstance(data.get("params"), dict):
+            data["title"] = data["params"].get("title", "")
+        if "artist" not in data and isinstance(data.get("params"), dict):
+            data["artist"] = data["params"].get("artist", "")
         _jobs[jid] = data
     if changed:
         _persist_jobs()
@@ -476,6 +482,8 @@ async def start_process(
         "step": "Queued…",
         "progress": 0,
         "error": None,
+        "title": title,
+        "artist": artist,
         "created_at": now,
         "queued_at": now,
         "last_update_at": now,
@@ -725,6 +733,9 @@ def get_jobs():
         if not isinstance(job, dict):
             continue
         completed = job.get("status") == "complete"
+        # Expose title/artist from either the top-level job record (new jobs)
+        # or from params (older persisted records that pre-date the top-level field).
+        params = job.get("params") or {}
         exposable: dict[str, object] = {
             "status": job.get("status"),
             "step": job.get("step"),
@@ -732,6 +743,9 @@ def get_jobs():
             "attempts": job.get("attempts", 1),
             "resumable": bool(job.get("resumable")),
             "error_code": job.get("error_code"),
+            "title": job.get("title") or params.get("title") or "",
+            "artist": job.get("artist") or params.get("artist") or "",
+            "lyric_style": params.get("lyric_style") or "",
         }
         if job.get("error"):
             exposable["error"] = job["error"]
@@ -742,16 +756,18 @@ def get_jobs():
         if completed:
             job_files = job.get("files") or {}
             if isinstance(job_files, dict):
+                available = [k for k in ("lyrics_video", "instrumental", "thumbnail")
+                             if Path(job_files.get(k, "")).exists()]
                 exposable["files"] = list(job_files.keys())
-                exposable["has_downloads"] = bool(job_files) and any(
-                    Path(job_files.get(k, "")).exists()
-                    for k in ("lyrics_video", "instrumental", "thumbnail")
-                )
+                exposable["available_files"] = available
+                exposable["has_downloads"] = bool(available)
             else:
                 exposable["files"] = []
+                exposable["available_files"] = []
                 exposable["has_downloads"] = False
         else:
             exposable["has_downloads"] = False
+            exposable["available_files"] = []
         result[jid] = exposable
     return result
 
