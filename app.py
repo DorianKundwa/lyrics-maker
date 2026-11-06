@@ -46,34 +46,95 @@ JOBS_STORE = ALIGN_DIR / "_jobs_store.json"
 # Editor audio/background copies and engine JSONs are kept this long so old
 # jobs can be re-rendered; after that they are pruned on the next submission.
 ALIGNMENT_RETENTION_SECONDS = 7 * 24 * 60 * 60
+# Inputs for failed/interrupted jobs are kept this long so they can be resumed.
+RESUMABLE_RETENTION_SECONDS = 7 * 24 * 60 * 60
 
 _rerender_jobs: dict[str, dict] = {}
 
 
+def _job_input_paths(job: dict) -> dict[str, Path]:
+    params = job.get("params") or {}
+    paths: dict[str, Path] = {}
+    for key in ("audio_path", "lyrics_path", "bg_path"):
+        value = params.get(key)
+        if value:
+            paths[key] = Path(value)
+    outro = params.get("outro_path")
+    if outro:
+        paths["outro_path"] = Path(outro)
+    return paths
+
+
+def _missing_job_inputs(job: dict) -> list[str]:
+    return [str(path) for path in _job_input_paths(job).values() if not path.exists()]
+
+
+def _can_resume(job: dict) -> bool:
+    return bool(job.get("params")) and not _missing_job_inputs(job)
+
+
+def _persist_jobs() -> None:
+    """Atomically write every job record, including failed/resumable ones."""
+    try:
+        tmp = JOBS_STORE.with_suffix(".tmp")
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+            f.write(json.dumps(_jobs, indent=2, default=str))
+        tmp.replace(JOBS_STORE)
+    except Exception:
+        import traceback
+        traceback.print_exc()
+
+
 def _load_jobs_store() -> None:
-    """Restore completed job metadata from disk on server restart."""
+    """Restore jobs and mark unfinished work as interrupted after a restart.
+
+    A queued/running record cannot still be running in a fresh process, so it is
+    surfaced as a resumable error instead of staying stuck at its last stage.
+    """
     if not JOBS_STORE.exists():
         return
     try:
         stored = json.loads(JOBS_STORE.read_text(encoding="utf-8"))
-        for jid, data in stored.items():
-            if jid not in _jobs:
-                _jobs[jid] = data
     except Exception:
-        pass
+        return
+    if not isinstance(stored, dict):
+        return
+    now = time.time()
+    changed = False
+    for jid, data in stored.items():
+        if jid in _jobs or not isinstance(data, dict):
+            continue
+        if data.get("status") in ("queued", "running"):
+            resumable = _can_resume(data)
+            data.update(
+                status="error",
+                step="Interrupted",
+                error=(
+                    "Lyrics Video Maker stopped before this job finished. Resume it to continue."
+                    if resumable
+                    else "Lyrics Video Maker stopped before this job finished, and its input files are no longer available."
+                ),
+                error_code="interrupted",
+                finished_at=now,
+                last_update_at=now,
+                resumable=resumable,
+            )
+            changed = True
+        elif "resumable" not in data:
+            # Keep legacy completed records readable without rewriting the store
+            # just because this field was added later.
+            data["resumable"] = False
+        _jobs[jid] = data
+    if changed:
+        _persist_jobs()
 
 
 _load_jobs_store()
 
 
 def _save_jobs_store() -> None:
-    try:
-        complete = {k: v for k, v in _jobs.items() if v.get("status") == "complete"}
-        JOBS_STORE.write_text(
-            json.dumps(complete, indent=2, default=str), encoding="utf-8"
-        )
-    except Exception:
-        pass
+    """Compatibility wrapper for older call sites."""
+    _persist_jobs()
 
 
 def _srt_time(ts: str) -> float:
@@ -253,16 +314,33 @@ def _get_semaphore() -> asyncio.Semaphore:
 
 def _cleanup_old_outputs():
     now = time.time()
+    changed = False
     for base_dir in (OUTPUT_DIR, UPLOAD_DIR):
         if not base_dir.exists():
             continue
         for d in base_dir.iterdir():
-            if not d.is_dir() or now - d.stat().st_mtime <= 3600:
+            if not d.is_dir():
                 continue
+            job = _jobs.get(d.name, {})
             # Never delete files of a job that is still waiting or running.
-            if _jobs.get(d.name, {}).get("status") in ("queued", "running"):
+            if job.get("status") in ("queued", "running"):
+                continue
+            if job.get("resumable"):
+                finished = (
+                    job.get("finished_at")
+                    or job.get("last_update_at")
+                    or job.get("queued_at")
+                    or now
+                )
+                if now - finished <= RESUMABLE_RETENTION_SECONDS:
+                    continue
+                job["resumable"] = False
+                changed = True
+            if now - d.stat().st_mtime <= 3600:
                 continue
             shutil.rmtree(d, ignore_errors=True)
+    if changed:
+        _persist_jobs()
 
 
 def _cleanup_old_alignments() -> None:
@@ -373,21 +451,80 @@ async def start_process(
         shutil.rmtree(job_dir, ignore_errors=True)
         return JSONResponse({"error": str(e)}, status_code=400)
 
-    _jobs[job_id] = {"status": "queued", "step": "", "progress": 0, "error": None}
-
-    background_tasks.add_task(
-        _run_job, job_id, audio_path, lyrics_path, bg_path, outro_path, out_dir,
-        title, artist, font_name, font_size, stem_engine, word_highlight, language,
-        active_color, upcoming_color, sung_color, lyric_style,
-        outro_text or "Thanks for watching!",
-    )
+    now = time.time()
+    params = {
+        "audio_path": str(audio_path),
+        "lyrics_path": str(lyrics_path),
+        "bg_path": str(bg_path),
+        "outro_path": str(outro_path) if outro_path else None,
+        "out_dir": str(out_dir),
+        "title": title,
+        "artist": artist,
+        "font_name": font_name,
+        "font_size": font_size,
+        "stem_engine": stem_engine,
+        "word_highlight": word_highlight,
+        "language": language,
+        "active_color": active_color,
+        "upcoming_color": upcoming_color,
+        "sung_color": sung_color,
+        "lyric_style": lyric_style,
+        "outro_text": outro_text or "Thanks for watching!",
+    }
+    _jobs[job_id] = {
+        "status": "queued",
+        "step": "Queued…",
+        "progress": 0,
+        "error": None,
+        "created_at": now,
+        "queued_at": now,
+        "last_update_at": now,
+        "attempts": 1,
+        "resumable": False,
+        "params": params,
+    }
+    _persist_jobs()
+    background_tasks.add_task(_run_job, job_id, **params)
     return {"job_id": job_id}
 
 
 # ─── Job Runner ──────────────────────────────────────────────────────────────
 
 def _set(job_id, *, step="", progress=0):
-    _jobs[job_id].update(status="running", step=step, progress=progress)
+    job = _jobs.get(job_id)
+    if job is None:
+        return
+    job.update(
+        status="running",
+        step=step,
+        progress=progress,
+        last_update_at=time.time(),
+        error_code=None,
+    )
+    _persist_jobs()
+
+
+def _valid_image(path: Path) -> bool:
+    try:
+        if not path.exists() or path.stat().st_size == 0:
+            return False
+        from PIL import Image
+        with Image.open(path) as img:
+            img.verify()
+        return True
+    except Exception:
+        return False
+
+
+def _valid_video(path: Path) -> bool:
+    try:
+        return (
+            path.exists()
+            and path.stat().st_size > 0
+            and proc.get_media_duration(str(path)) > 0
+        )
+    except Exception:
+        return False
 
 
 async def _run_job(
@@ -406,9 +543,18 @@ async def _run_job(
     sung_color: str = "#FFFFFF",
     lyric_style: str = "classic",
     outro_text: str = "Thanks for watching!",
+    resume: bool = False,
 ):
+    audio_path = Path(audio_path)
+    lyrics_path = Path(lyrics_path)
+    bg_path = Path(bg_path)
+    outro_path = Path(outro_path) if outro_path else None
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     async with _get_semaphore():
         job = _jobs[job_id]
+        job.setdefault("attempts", 1)
+        job["resumable"] = False
         loop = asyncio.get_running_loop()
 
         def run(fn, *args, **kwargs):
@@ -421,34 +567,62 @@ async def _run_job(
         try:
             check_cancelled()
             # 1 — Thumbnail
-            _set(job_id, step="Generating YouTube thumbnail…", progress=5)
             thumb_path = out_dir / "thumbnail.jpg"
-            await run(proc.generate_thumbnail, bg_path, thumb_path, title, artist, (1280, 720), font_name)
+            if resume and _valid_image(thumb_path):
+                _set(job_id, step="Reusing thumbnail…", progress=5)
+            else:
+                _set(job_id, step="Generating YouTube thumbnail…", progress=5)
+                await run(proc.generate_thumbnail, bg_path, thumb_path, title, artist, (1280, 720), font_name)
 
             check_cancelled()
             # 1.5 — Stem Separation
-            _set(job_id, step="Separating stems (this may take a few minutes)…", progress=15)
-            from stem_separator import separate_audio
             stem_warnings: list = []
-            vocals_path, inst_audio_path = await run(
-                separate_audio, audio_path, stem_engine, str(out_dir), stem_warnings
-            )
-            if stem_warnings:
-                job.setdefault("warnings", []).extend(stem_warnings)
+            vocals_path = inst_audio_path = None
+            if resume:
+                stored_stems = job.get("stem_paths") or {}
+                stored_vocals = stored_stems.get("vocals")
+                stored_inst = stored_stems.get("instrumental")
+                if stored_vocals and stored_inst:
+                    candidate_vocals = Path(stored_vocals)
+                    candidate_inst = Path(stored_inst)
+                    if candidate_vocals.exists() and candidate_inst.exists():
+                        vocals_path, inst_audio_path = candidate_vocals, candidate_inst
+                        _set(job_id, step="Reusing separated stems…", progress=25)
+            if vocals_path is None:
+                _set(job_id, step="Separating stems (this may take a few minutes)…", progress=15)
+                from stem_separator import separate_audio
+                vocals_path, inst_audio_path = await run(
+                    separate_audio, audio_path, stem_engine, str(out_dir), stem_warnings
+                )
+                job["stem_paths"] = {
+                    "vocals": str(vocals_path),
+                    "instrumental": str(inst_audio_path),
+                }
+                if stem_warnings:
+                    job.setdefault("warnings", []).extend(stem_warnings)
+                _persist_jobs()
 
             check_cancelled()
             # 2 — Instrumental video
-            _set(job_id, step="Rendering instrumental video…", progress=35)
             inst_path = out_dir / "instrumental.mp4"
-            await run(
-                proc.generate_instrumental_video,
-                bg_path, inst_audio_path, inst_path, outro_path, title, artist,
-            )
+            if resume and _valid_video(inst_path):
+                _set(job_id, step="Reusing instrumental video…", progress=60)
+            else:
+                _set(job_id, step="Rendering instrumental video…", progress=35)
+                await run(
+                    proc.generate_instrumental_video,
+                    bg_path, inst_audio_path, inst_path, outro_path, title, artist,
+                )
 
             check_cancelled()
             # 3 — Lyrics video
-            _set(job_id, step="Rendering lyrics video…", progress=65)
             lv_path = out_dir / "lyrics_video.mp4"
+            if lv_path.exists() and not _valid_video(lv_path):
+                try:
+                    lv_path.unlink()
+                except OSError:
+                    pass
+            _set(job_id, step="Rendering lyrics video…", progress=65)
             timed = await run(
                 proc.generate_lyrics_video,
                 bg_path, audio_path, vocals_path, lyrics_path, lv_path, outro_path, title, artist, font_name, font_size, word_highlight, language,
@@ -458,10 +632,16 @@ async def _run_job(
             # A cancel that arrived during the last stage must win over "complete".
             check_cancelled()
             srt_path = out_dir / "lyrics.srt"
+            now = time.time()
             job.update(
                 status="complete",
                 step="All files ready!",
                 progress=100,
+                error=None,
+                error_code=None,
+                resumable=False,
+                finished_at=now,
+                last_update_at=now,
                 files={
                     "lyrics_video":  str(lv_path),
                     "instrumental":  str(inst_path),
@@ -471,6 +651,7 @@ async def _run_job(
                     } if srt_path.exists() else {}),
                 },
             )
+            _persist_jobs()
 
             # ── Save alignment data for the Lyric Editor (non-fatal) ─────────
             try:
@@ -498,21 +679,81 @@ async def _run_job(
                         pass
 
         except InterruptedError:
-            job.update(status="error", step="Cancelled", error="Job was cancelled by the user.")
+            now = time.time()
+            job.update(
+                status="error",
+                step="Cancelled",
+                error="Job was cancelled by the user.",
+                error_code="cancelled",
+                resumable=_can_resume(job),
+                finished_at=now,
+                last_update_at=now,
+            )
+            _persist_jobs()
         except Exception as exc:
             import traceback
             traceback.print_exc()
-            job.update(status="error", step="Failed", error="An internal error occurred during processing. Please try again.")
+            now = time.time()
+            job.update(
+                status="error",
+                step="Failed",
+                error="An internal error occurred during processing. Please try again.",
+                error_code="failed",
+                resumable=_can_resume(job),
+                finished_at=now,
+                last_update_at=now,
+            )
+            _persist_jobs()
         finally:
-            job_dir = UPLOAD_DIR / job_id
-            shutil.rmtree(job_dir, ignore_errors=True)
+            # Keep uploads for failed/interrupted jobs so Resume can use them.
+            if job.get("status") == "complete":
+                shutil.rmtree(UPLOAD_DIR / job_id, ignore_errors=True)
+            _persist_jobs()
 
 
 # ─── Status & Download ───────────────────────────────────────────────────────
 
 @app.get("/api/jobs")
 def get_jobs():
-    return _jobs
+    """History view: every job except internal param/cancel bookkeeping.
+
+    Public fields are chosen so the UI can build a job-history panel without
+    ever receiving raw input paths or cancel-request state.
+    """
+    result: dict[str, dict] = {}
+    for jid, job in _jobs.items():
+        if not isinstance(job, dict):
+            continue
+        completed = job.get("status") == "complete"
+        exposable: dict[str, object] = {
+            "status": job.get("status"),
+            "step": job.get("step"),
+            "progress": job.get("progress", 0),
+            "attempts": job.get("attempts", 1),
+            "resumable": bool(job.get("resumable")),
+            "error_code": job.get("error_code"),
+        }
+        if job.get("error"):
+            exposable["error"] = job["error"]
+        exposable["created_at"] = job.get("created_at")
+        exposable["last_update_at"] = job.get("last_update_at")
+        if job.get("resumable"):
+            exposable["finished_at"] = job.get("finished_at")
+        if completed:
+            job_files = job.get("files") or {}
+            if isinstance(job_files, dict):
+                exposable["files"] = list(job_files.keys())
+                exposable["has_downloads"] = bool(job_files) and any(
+                    Path(job_files.get(k, "")).exists()
+                    for k in ("lyrics_video", "instrumental", "thumbnail")
+                )
+            else:
+                exposable["files"] = []
+                exposable["has_downloads"] = False
+        else:
+            exposable["has_downloads"] = False
+        result[jid] = exposable
+    return result
 
 @app.delete("/api/jobs/{job_id}")
 def cancel_job(job_id: str):
@@ -526,12 +767,70 @@ def cancel_job(job_id: str):
     return {"success": True, "status": "cancelling"}
 
 
+def _cancelled_but_still_running(job: dict) -> bool:
+    """A user hit Stop, but the runner has not yet caught the flag."""
+    return job.get("status") == "running" and job.get("cancel_requested")
+
+
+@app.post("/api/jobs/{job_id}/resume")
+def resume_job(job_id: str, background_tasks: BackgroundTasks):
+    """Re-queue a failed, cancelled, or interrupted job from its saved inputs."""
+    job = _jobs.get(job_id)
+    if job is None:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+
+    if _cancelled_but_still_running(job):
+        return JSONResponse(
+            {"error": "The job is still cancelling. Resume it once the Stop finishes."},
+            status_code=409,
+        )
+    if job.get("status") not in ("error", "interrupted", "cancelled"):
+        return JSONResponse({"error": "Job is not in a resumable state"}, status_code=409)
+
+    if job.get("status") == "cancelled" and not job.get("resumable") and job.get("params"):
+        # The runner hasn't written a resumable flag yet for cancelled jobs; infer it
+        # from whether the inputs still exist so the user can resume cancelled work.
+        job["resumable"] = not _missing_job_inputs(job)
+
+    missing = _missing_job_inputs(job)
+    if missing:
+        job["resumable"] = False
+        _persist_jobs()
+        return JSONResponse(
+            {"error": "Cannot resume: input files were removed.", "missing": missing},
+            status_code=410,
+        )
+    if not job.get("resumable") or not job.get("params"):
+        return JSONResponse({"error": "This job cannot be resumed."}, status_code=409)
+
+    now = time.time()
+    job.update(
+        status="queued",
+        step="Queued to resume…",
+        progress=0,
+        error=None,
+        error_code=None,
+        cancel_requested=False,
+        resumable=False,
+        resumed_at=now,
+        last_update_at=now,
+        attempts=int(job.get("attempts", 1)) + 1,
+    )
+    job.pop("finished_at", None)
+    _persist_jobs()
+    background_tasks.add_task(_run_job, job_id, resume=True, **job["params"])
+    return {"job_id": job_id, "status": "queued", "attempts": job["attempts"]}
+
+
 @app.get("/api/status/{job_id}")
 def get_status(job_id: str):
     if job_id not in _jobs:
         return JSONResponse({"error": "Not found"}, status_code=404)
     j = _jobs[job_id]
-    resp = {k: v for k, v in j.items() if k != "files"}
+    resp = {
+        k: v for k, v in j.items()
+        if k not in ("files", "params", "cancel_requested")
+    }
     if j.get("status") == "complete":
         resp["files"] = list(j["files"].keys())
     return resp

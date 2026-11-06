@@ -10,6 +10,7 @@ import re
 import os
 import sys
 import json
+import math
 import mimetypes
 import textwrap
 from pathlib import Path
@@ -315,14 +316,144 @@ _LYRIC_STYLES: dict[str, dict] = {
 }
 
 
-def _words_fit_text(words: list, text: str) -> bool:
-    """Karaoke is only valid while the stored words still spell the line.
+def _karaoke_units(words: list, text: str) -> list[dict] | None:
+    """Group aligned tokens back onto the words exactly as they are written.
 
-    The editor can rewrite a line's text; its word timings then belong to the
-    old text, so highlighting them would put the wrong word on screen.
+    Aligners split hyphenated words ("After-party" becomes "After", "party")
+    and may strip punctuation. Karaoke must display the original line, so this
+    consumes one or more aligned tokens for each written word. It returns None
+    when the token stream no longer spells the line, for example after the
+    editor rewrites it.
     """
-    joined = " ".join(str(w.get("text", "")) for w in words).split()
-    return joined == str(text or "").split()
+    def _norm(value: str) -> str:
+        return re.sub(r"[\W_]+", "", str(value or ""), flags=re.UNICODE).lower()
+
+    tokens = str(text or "").split()
+    if not words or not tokens:
+        return None
+
+    units: list[dict] = []
+    word_index = 0
+    for token in tokens:
+        target = _norm(token)
+        if not target:
+            if units:
+                units[-1]["text"] += token
+            continue
+        if word_index >= len(words):
+            return None
+
+        accumulated = ""
+        start = words[word_index].get("start")
+        end = words[word_index].get("end")
+        consumed = 0
+        while word_index < len(words):
+            part = words[word_index]
+            accumulated += _norm(part.get("text", ""))
+            end = part.get("end", end)
+            word_index += 1
+            consumed += 1
+            if accumulated == target:
+                break
+            if len(accumulated) >= len(target):
+                return None
+
+        if not consumed or accumulated != target or start is None or end is None:
+            return None
+        units.append({"text": token, "start": start, "end": end})
+
+    return units if word_index == len(words) else None
+
+
+def _clean_word_timings(item: dict) -> dict:
+    """Repair word timings that would make karaoke jump or stall.
+
+    A single word can consume most of a line when the aligner anchors it to the
+    wrong repetition, leaving every later word bunched at the end. When one
+    inter-word gap is both longer than two seconds and more than half the line,
+    the line is moved onto its densest cluster of words and spread evenly there.
+    Normal spacing is left untouched, and overlapping or out-of-range timings are
+    clamped in place.
+    """
+    words = item.get("words") or []
+    if len(words) < 2:
+        return item
+    try:
+        line_start = float(item["start"])
+        line_end = float(item["end"])
+    except (KeyError, TypeError, ValueError):
+        return item
+    if not (math.isfinite(line_start) and math.isfinite(line_end)) or line_end <= line_start:
+        return item
+
+    cleaned: list[dict] = []
+    previous_start = line_start
+    changed = False
+    for word in words:
+        try:
+            start = float(word["start"])
+            end = float(word["end"])
+        except (KeyError, TypeError, ValueError):
+            return item
+        if not (math.isfinite(start) and math.isfinite(end)):
+            return item
+
+        start = min(max(start, line_start), line_end)
+        if start < previous_start:
+            start = previous_start
+            changed = True
+        if start > previous_start:
+            previous_start = start
+        end = min(max(end, start + 0.05), line_end)
+        cleaned.append({**word, "start": round(start, 3), "end": round(end, 3)})
+
+    for current, following in zip(cleaned, cleaned[1:]):
+        if current["end"] > following["start"]:
+            current["end"] = following["start"]
+            changed = True
+
+    starts = [word["start"] for word in cleaned]
+    gaps = [later - earlier for earlier, later in zip(starts, starts[1:])]
+    if not gaps or max(gaps) <= max(2.0, (line_end - line_start) * 0.5):
+        return {**item, "words": cleaned} if changed else item
+
+    # Split the starts wherever the singer pauses; the largest group is the
+    # passage that actually belongs to this line. A lone early word is usually
+    # a match against the intro or a repeated ad-lib, not the line's start.
+    clusters: list[tuple[int, int]] = []
+    cluster_start = 0
+    for index, gap in enumerate(gaps, start=1):
+        if gap > 1.5:
+            clusters.append((cluster_start, index))
+            cluster_start = index
+    clusters.append((cluster_start, len(cleaned)))
+    first, last = max(clusters, key=lambda pair: (pair[1] - pair[0], -pair[0]))
+
+    if last - first >= 2:
+        target_start = cleaned[first]["start"]
+        cluster_gaps = sorted(gaps[first:last - 1])
+        tail = cluster_gaps[len(cluster_gaps) // 2] if cluster_gaps else 0.2
+        target_end = min(line_end, cleaned[last - 1]["start"] + max(0.1, tail))
+    else:
+        # No dense passage to anchor on: keep the original line bounds.
+        target_start, target_end = line_start, line_end
+    if target_end <= target_start:
+        target_start, target_end = line_start, line_end
+
+    step = (target_end - target_start) / len(cleaned)
+    for index, word in enumerate(cleaned):
+        word["start"] = round(target_start + index * step, 3)
+        word["end"] = round(target_start + (index + 1) * step, 3)
+    changed = True
+
+    if not changed:
+        return item
+    return {
+        **item,
+        "start": round(target_start, 3),
+        "end": round(target_end, 3),
+        "words": cleaned,
+    }
 
 
 def _shift_position_tags(dialogue: str, dx: int, dy: int) -> str:
@@ -390,44 +521,56 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     # Glow colour for neon layer = upcoming/accent color
     neon_glow_col  = second_col
     multi_mode     = sc.get("multi_line", None)
+    # Normalise once so display gaps, previews, and karaoke all use the same
+    # corrected word/line timings.
+    items = [_clean_word_timings(item) for item in timed_lyrics]
 
-    for i, item in enumerate(timed_lyrics):
+    for i, item in enumerate(items):
         first_line = len(lines)
         start = item["start"]
         end   = item["end"]
+        karaoke_end = end
         # For teleprompter styles: extend end to next event start to fill gaps
-        # so the screen never goes blank between alignment segments.
-        if multi_mode and i + 1 < len(timed_lyrics):
-            next_start = timed_lyrics[i + 1]["start"]
+        # so the screen never goes blank between alignment segments. Karaoke
+        # still stops at the line's own end instead of holding its last word
+        # through the gap.
+        if multi_mode and i + 1 < len(items):
+            next_start = items[i + 1]["start"]
             if next_start > end:
                 end = next_start
 
         words = item.get("words", [])
 
         # ── Build karaoke or plain text body ──────────────────────────────────
-        if words and word_highlight and _words_fit_text(words, item.get("text", "")):
-            # \k: simple instant colour-swap per syllable.
-            # SecondaryColour (upcoming_color) = un-sung text colour.
-            # PrimaryColour  (active_color)    = sung text colour.
+        units = _karaoke_units(words, item.get("text", "")) if words and word_highlight else None
+        if units:
+            # \k: simple instant colour-swap per word. Each word owns the time
+            # until the next word starts, so overlapping aligned intervals
+            # cannot make the highlight clock run ahead of the song, and gaps
+            # do not emit empty \k tags that clear the highlight.
             karaoke_text = ""
-            current_time = start
-            for w in words:
-                w_start = w["start"]
-                w_end   = w["end"]
+            current_time = float(start)
+            line_end = max(float(start), float(karaoke_end))
+            for index, unit in enumerate(units):
+                w_start = min(max(float(unit["start"]), current_time), line_end)
+                if index + 1 < len(units):
+                    next_start = min(max(float(units[index + 1]["start"]), w_start), line_end)
+                else:
+                    next_start = line_end
                 if w_start > current_time:
-                    gap_cs = int((w_start - current_time) * 100)
+                    gap_cs = int(round((w_start - current_time) * 100))
                     if gap_cs > 0:
                         karaoke_text += f"{{\\k{gap_cs}}}"
-                duration_cs = int(max(0, w_end - w_start) * 100)
-                karaoke_text += f"{{\\k{duration_cs}}}{_ass_escape(w['text'])} "
-                current_time = w_end
+                duration_cs = max(0, int(round((next_start - w_start) * 100)))
+                karaoke_text += f"{{\\k{duration_cs}}}{_ass_escape(unit['text'])} "
+                current_time = next_start
             text_body = karaoke_text.strip()
         else:
             text_body = _ass_escape(item.get("text", ""))
 
         # ── Per-style intro + outro tags ───────────────────────────────────────
         is_first = (i == 0)
-        is_last  = (i == len(timed_lyrics) - 1)
+        is_last  = (i == len(items) - 1)
 
         if lyric_style == "classic":
             # CLASSIC KARAOKE — Static centre position for all lines.
@@ -532,8 +675,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                     f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                     f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
                 )
-                if 1 < len(timed_lyrics):
-                    nxt   = _ass_escape(timed_lyrics[1]["text"])
+                if 1 < len(items):
+                    nxt   = _ass_escape(items[1]["text"])
                     t_nxt = rf"\pos(960,{cur_y + spacing})\fad(300,0)\1c{second_col}\alpha&H55&"
                     lines.append(
                         f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
@@ -554,7 +697,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                     f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
                 )
                 # Next line slides in from below
-                nxt   = _ass_escape(timed_lyrics[i + 1]["text"])
+                nxt   = _ass_escape(items[i + 1]["text"])
                 t_nxt = rf"\move(960,{cur_y + 2*spacing},960,{cur_y + spacing},0,{tr_ms})\1c{second_col}\alpha&HBB&\t(0,{tr_ms},\alpha&H55&)"
                 lines.append(
                     f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
@@ -568,11 +711,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             window = [(i - 1, "past"), (i, "cur"), (i + 1, "next"), (i + 2, "far")]
 
             for slot_idx, (idx, role) in enumerate(window):
-                if idx < 0 or idx >= len(timed_lyrics):
+                if idx < 0 or idx >= len(items):
                     continue
                 y_this = cur_y + (slot_idx - 1) * spacing
                 y_from = y_this + spacing
-                entry  = timed_lyrics[idx]
+                entry  = items[idx]
                 layer  = 1 if role == "cur" else 0
 
                 if role == "cur":
@@ -911,6 +1054,10 @@ def generate_lyrics_video(
             "words": []
         })
 
+    # Repair implausible word spacing before SRT/LRC/ASS are written, so the
+    # video and the downloadable timing files agree.
+    timed = [_clean_word_timings(item) for item in timed]
+
     # Write SRT
     srt_lines = []
     for i, item in enumerate(timed):
@@ -1046,7 +1193,7 @@ def rerender_lyrics_video(
     work_dir = Path(output_path).parent
     work_dir.mkdir(parents=True, exist_ok=True)
 
-    prepared = [_retime_segment_words(segment) for segment in segments]
+    prepared = [_clean_word_timings(_retime_segment_words(segment)) for segment in segments]
     ass_content = generate_ass(
         prepared,
         font_name=font_name,

@@ -341,6 +341,92 @@
     margin-top: 40px;
     animation: fadeUp .5s ease both;
   }
+
+  /* ── Previous jobs panel ── */
+  .jobs-panel {
+    display: none;
+    margin-top: 56px;
+    animation: fadeUp .5s .1s ease both;
+  }
+  .jobs-panel.visible { display: block; }
+  .jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .job-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color .2s;
+  }
+  .job-card:hover { border-color: var(--accent2); }
+  .job-card.finished { border-left: 3px solid var(--success); }
+  .job-card.resumable { border-left: 3px solid var(--gold); }
+  .job-card.queued,
+  .job-card.running { border-left: 3px solid var(--accent); }
+  .job-card.error { border-left: 3px solid #ff3c6460; }
+  .job-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: .92rem;
+    color: var(--text);
+    word-break: break-word;
+  }
+  .job-artist {
+    font-size: .8rem;
+    color: var(--muted);
+    word-break: break-word;
+    margin-left: 6px;
+  }
+  .job-time {
+    font-size: .72rem;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+  .job-status {
+    font-size: .72rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .job-status .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .job-status .dot.done  { background: var(--success); }
+  .job-status .dot.resumable { background: var(--gold); }
+  .job-status .dot.active { background: var(--accent); }
+  .job-status .dot.interrupted, .job-status .dot.cancelled { background: var(--gold); }
+  .job-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-sm {
+    font-size: .76rem;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity .2s, transform .15s;
+  }
+  .btn-sm:hover { opacity: .88; transform: translateY(-1px); }
+  .btn-sm:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-btn-sm { background: var(--border); color: var(--text); }
+  .btn-btn-sm:hover { background: #2a2f42; }
+  .btn-ghost { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+  .btn-ghost:hover { background: rgba(245,158,11,.08); }
+  .btn-ghost:disabled { color: var(--muted); border-color: var(--border); }
+
+  @media (max-width: 640px) {
+    .jobs-grid { grid-template-columns: 1fr; }
+  }
   .results-panel.visible { display: block; }
   .results-title {
     font-family: 'Syne', sans-serif;
@@ -940,11 +1026,22 @@
 
   <!-- Error -->
   <div class="error-banner" id="errorBanner"></div>
+  <button type="button" id="btnResume" style="display:none; background:#00b36b; color:#fff; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:600; font-family:inherit; margin-top:10px;">↻ Resume job</button>
 
   <!-- Results -->
   <div class="results-panel" id="resultsPanel">
     <div class="results-title">✅ &nbsp;All files ready</div>
     <div class="results-grid" id="resultsGrid"></div>
+  </div>
+
+  <!-- Previous jobs -->
+  <div class="jobs-panel" id="jobsPanel">
+    <div class="section-label"><span class="num">📂</span> Previous jobs</div>
+    <div id="jobsControls" style="display:flex; gap:12px; align-items:center; margin-bottom:18px; flex-wrap:wrap;">
+      <button type="button" id="btnRefreshJobs" class="btn-inline">↻ Refresh list</button>
+      <span class="inline-status" id="jobsStatus" style="margin-left:auto;"></span>
+    </div>
+    <div id="jobsGrid" class="jobs-grid"></div>
   </div>
 
 </div>
@@ -990,13 +1087,267 @@ const progressStep  = document.getElementById('progressStep');
 const progressTitle = document.getElementById('progressTitle');
 const spinner       = document.getElementById('spinner');
 const errorBanner   = document.getElementById('errorBanner');
+const btnResume     = document.getElementById('btnResume');
 const resultsPanel  = document.getElementById('resultsPanel');
 const resultsGrid   = document.getElementById('resultsGrid');
 
 let currentJobId = null;
 let pollActive = false;
+let resumeJobId = null;
 let _originalTitle = document.title;
 let _titleFlashInterval = null;
+
+// ── Previous jobs panel ────────────────────────────────────────────────────────
+const jobsControls = document.getElementById('jobsControls');
+const jobsGrid     = document.getElementById('jobsGrid');
+const jobsStatus   = document.getElementById('jobsStatus');
+const btnRefreshJobs = document.getElementById('btnRefreshJobs');
+
+let jobsLoaded = false;
+
+function fmtTime(ts) {
+  if (!ts) return '';
+  try {
+    return new Date(Number(ts) * 1000).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  } catch (e) {
+    return '';
+  }
+}
+
+function cardStatusLabel(status) {
+  return {
+    queued:   'Queued',
+    running:  'Processing…',
+    complete: 'Finished',
+    error:    'Stopped',
+  }[status] || status || '';
+}
+
+function dotClass(status, resumable) {
+  if (status === 'complete') return 'done';
+  if (['queued', 'running'].includes(status)) return 'active';
+  if (status === 'error') {
+    return resumable ? 'resumable' : 'interrupted';
+  }
+  return '';
+}
+
+function cardClasses(status) {
+  const parts = ['job-card'];
+  if (['queued', 'running'].includes(status)) parts.push(status);
+  else if (status === 'complete') parts.push('finished');
+  else if (status === 'error') parts.push('error');
+  return parts.join(' ');
+}
+
+function renderJobs(jobs) {
+  if (!jobs || typeof jobs !== 'object') {
+    jobsGrid.innerHTML = '';
+    return;
+  }
+  const entries = Object.entries(jobs);
+  if (!entries.length) {
+    jobsGrid.innerHTML = `<div class="job-card" style="justify-content:center; align-items:center; padding:30px 0; border-style:dashed;">
+      <div class="job-title" style="border:1px dashed var(--border); padding:14px 18px; border-radius:10px;">No previous jobs yet</div>
+      <div class="job-time">Submit a song and this panel will start filling in.</div>
+    </div>`;
+    return;
+  }
+
+  // Show finished downloads first, then resumable, then everything else newest-first.
+  const ordered = entries.slice().sort((a, b) => {
+    const aDone = a[1].has_downloads ? 0 : 1;
+    const bDone = b[1].has_downloads ? 0 : 1;
+    if (aDone !== bDone) return aDone - bDone;
+    if (a[1].resumable !== b[1].resumable) return (a[1].resumable ? -1 : 1) - (b[1].resumable ? -1 : 1);
+    const aT = a[1].created_at || 0;
+    const bT = b[1].created_at || 0;
+    return bT - aT;
+  });
+
+  jobsGrid.innerHTML = ordered.map(([jid, job]) => {
+    const status = job.status || 'unknown';
+    const finished = status === 'complete';
+    const resumable = Boolean(job.resumable);
+    const artist = (job.artist || '').trim();
+    const title = (job.title || '').trim();
+    const titleText = title || 'Untitled';
+    const showArtist = Boolean(artist);
+    const ts = job.created_at || job.last_update_at;
+
+    const downloadKeys = finished && job.files && job.files.length ? job.files : [];
+    const hasVideo = downloadKeys.includes('lyrics_video');
+    const hasInst  = downloadKeys.includes('instrumental');
+    const hasThumb = downloadKeys.includes('thumbnail');
+
+    const actions = [];
+
+    if (finished && hasVideo) {
+      actions.push({
+        text: 'Open Editor',
+        kind: 'btn-sm btn-btn-sm',
+        disabled: false,
+      });
+      actions.push({
+        text: 'Download All',
+        kind: 'btn-sm btn-btn-sm',
+        disabled: false,
+      });
+    }
+
+    if (resumable) {
+      actions.push({
+        text: 'Resume',
+        kind: 'btn-sm btn-ghost',
+        disabled: false,
+      });
+    } else if (finished && !hasVideo && !hasInst && !hasThumb && !downloadKeys.length) {
+      actions.push({
+        text: 'Re-run',
+        kind: 'btn-sm btn-ghost',
+        disabled: false,
+      });
+    }
+
+    const escapedJobId = escapeHtml(jid);
+    return `
+      <div class="${cardClasses(status)}" data-job-id="${escapedJobId}">
+        <div class="job-title">
+          ${escapeHtml(titleText)}${showArtist ? `<span class="job-artist">${escapeHtml(artist)}</span>` : ''}${fmtTime(ts) ? `<span class="job-time">${escapeHtml(fmtTime(ts))}</span>` : ''}
+        </div>
+        <div class="job-status">
+          <span class="dot ${dotClass(status, resumable)}"></span>
+          <span>${escapeHtml(cardStatusLabel(status))}</span>
+          ${resumable ? `<span style="color:var(--gold); font-weight:600;">Resumable</span>` : ''}
+          ${finished && hasVideo ? `<span style="color:var(--success); font-weight:600;">Downloads ready</span>` : ''}
+        </div>
+        ${actions.length ? `<div class="job-actions">${actions.map(a => `<button type="button" class="${a.kind}" data-action="${escapeHtml(String(a.text))}"${a.disabled ? ' disabled' : ''}>${escapeHtml(a.text)}</button>`).join('')}</div>` : ''}
+      </div>`;
+    });
+}
+
+function attachJobCardHandlers() {
+  jobsGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest ? e.target.closest('button[data-action]') : null;
+    if (!btn) return;
+    const action = btn.getAttribute('data-action');
+    if (action === 'Resume') {
+      const card = btn.closest && btn.closest('.job-card');
+      const jid = card ? card.getAttribute('data-job-id') : null;
+      if (jid) onResumeJob(jid);
+    } else if (action === 'Open Editor') {
+      const card = btn.closest && btn.closest('.job-card');
+      const jid = card ? card.getAttribute('data-job-id') : null;
+      if (jid) window.open(`/editor?job_id=${encodeURIComponent(jid)}`, '_blank');
+    } else if (action === 'Download All') {
+      const card = btn.closest && btn.closest('.job-card');
+      const jid = card ? card.getAttribute('data-job-id') : null;
+      if (jid) window.open(`/api/jobs/${encodeURIComponent(jid)}/download-all`, '_blank');
+    } else if (action === 'Re-run') {
+      onRebuildJob();
+    }
+  });
+}
+
+async function onResumeJob(jobId) {
+  btnResume.disabled = true;
+  try {
+    const res = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/resume`, { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) throw new Error(data.error || 'Could not resume this job.');
+
+    jobsLoaded = false;
+    await refreshJobs();
+
+    // Move the resumed job into the active render flow.
+    hideResults();
+    hideError();
+    currentJobId = jobId;
+    pollActive = true;
+    btnCancel.style.display = 'block';
+    btnProcess.disabled = true;
+    btnProcess.textContent = '⏳ Processing…';
+    progressPanel.classList.add('visible');
+    spinner.style.display = '';
+    progressTitle.textContent = 'Processing…';
+    setProgress(0, 'Queued to resume…');
+    await pollStatus(jobId);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    btnResume.disabled = false;
+  }
+}
+
+async function onRebuildJob() {
+  showError('Re-running a finished job whose outputs expired is not yet supported from the panel. Submit the song again to regenerate it.');
+}
+
+function hideResults() {
+  resultsPanel.classList.remove('visible');
+}
+
+function hideError() {
+  errorBanner.classList.remove('visible');
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function refreshJobs() {
+  jobsStatus.textContent = '';
+  try {
+    const res = await fetch('/api/jobs');
+    if (!res.ok) throw new Error('Could not load job history.');
+    const jobs = await res.json();
+    renderJobs(jobs);
+    jobsLoaded = true;
+  } catch (err) {
+    jobsStatus.textContent = err.message;
+    jobsStatus.className = 'inline-status err';
+  }
+}
+
+function showJobs() {
+  jobsPanel.classList.add('visible');
+}
+
+function hideJobs() {
+  jobsPanel.classList.remove('visible');
+}
+
+btnRefreshJobs.addEventListener('click', async () => {
+  btnRefreshJobs.disabled = true;
+  try {
+    await refreshJobs();
+  } finally {
+    btnRefreshJobs.disabled = false;
+  }
+});
+
+// Show the history panel once a job finishes and we have results on screen.
+function showHistoryAfterCompletion() {
+  showJobs();
+}
+
+// Initial load (fire-and-forget; the panel may appear empty until the user clicks Refresh).
+refreshJobs().then(() => {
+  if (!jobsLoaded) {
+    // No server yet, or the server is being started for the first time: still try once more
+    // after a short pause so a freshly-started app can populate the list.
+    setTimeout(refreshJobs, 1500);
+  }
+});
+
+attachJobCardHandlers();
 
 // ── Completion notification helpers ──────────────────────────────────────────
 
@@ -1092,11 +1443,39 @@ btnCancel.addEventListener('click', async () => {
   }
   pollActive = false; // Stop polling
   
-  showError('Job cancelled by user.');
-  progressPanel.classList.remove('visible');
-  btnCancel.style.display = 'none';
-  currentJobId = null;
+  stopPolling('Job cancelled by user.', null);
 });
+
+btnResume.addEventListener('click', async () => {
+  const jobId = resumeJobId;
+  if (!jobId) return;
+  btnResume.disabled = true;
+  try {
+    const res = await fetch(`/api/jobs/${jobId}/resume`, { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) throw new Error(data.error || 'Could not resume this job.');
+
+    resumeJobId = null;
+    btnResume.style.display = 'none';
+    errorBanner.classList.remove('visible');
+    resultsPanel.classList.remove('visible');
+    currentJobId = jobId;
+    pollActive = true;
+    btnCancel.style.display = 'block';
+    btnProcess.disabled = true;
+    btnProcess.textContent = '⏳ Processing…';
+    progressPanel.classList.add('visible');
+    spinner.style.display = '';
+    progressTitle.textContent = 'Processing…';
+    setProgress(0, 'Queued to resume…');
+    await pollStatus(jobId);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    btnResume.disabled = false;
+  }
+});
+
 
 // ── Download YouTube audio as MP3 into Main Audio ──────────────────────────────────────────────────
 async function downloadYoutube() {
@@ -1208,6 +1587,8 @@ form.addEventListener('submit', async e => {
   e.preventDefault();
   errorBanner.classList.remove('visible');
   resultsPanel.classList.remove('visible');
+  btnResume.style.display = 'none';
+  resumeJobId = null;
 
   const fd = new FormData(form);
 
@@ -1254,17 +1635,29 @@ form.addEventListener('submit', async e => {
   } catch (err) {
     showError(err.message);
     btnCancel.style.display = 'none';
+    btnResume.style.display = 'none';
+    resumeJobId = null;
   }
 });
+
 
 const MAX_POLL_FAILURES = 5;
 
 // Ends polling, clears the job, and shows the message. Used for every failure path.
-function stopPolling(message) {
+function stopPolling(message, resumeId = null, resumable = false) {
   pollActive = false;
   currentJobId = null;
   btnCancel.style.display = 'none';
-  showError(message);
+  // A cancelled job that is still resumable should surface the Resume control when
+  // the poll loop detects it; cancelled jobs also remain visible in the history panel.
+  if (resumable) {
+    resumeJobId = resumeId || null;
+    btnResume.style.display = 'inline-block';
+  } else {
+    resumeJobId = null;
+    btnResume.style.display = 'none';
+  }
+  showError(message, resumable);
 }
 
 async function pollStatus(jobId) {
@@ -1297,7 +1690,7 @@ async function pollStatus(jobId) {
     failures = 0;
 
     if (data.status === 'error') {
-      stopPolling(data.error || 'Processing failed');
+      stopPolling(data.error || 'Processing failed', data.resumable ? jobId : null, Boolean(data.resumable));
       return;
     }
     if (data.status === 'complete') {
@@ -1315,7 +1708,10 @@ async function pollStatus(jobId) {
       btnProcess.disabled = false;
       btnProcess.textContent = '⚡ Generate Again';
       btnCancel.style.display = 'none';
+      btnResume.style.display = 'none';
       currentJobId = null;
+      resumeJobId = null;
+      showHistoryAfterCompletion();
       return;
     }
     setProgress(data.progress || 0, data.step || 'Working…');
@@ -1329,6 +1725,7 @@ function setProgress(pct, step) {
 
 function showResults(jobId, fileKeys) {
   resultsPanel.classList.add('visible');
+  showJobs();
   const meta = {
     lyrics_video:  { icon:'🎬', label:'Lyrics Video',      hint:'MP4 · 1920×1080 · H.264' },
     instrumental:  { icon:'🎵', label:'Instrumental Video', hint:'MP4 · 1920×1080 · H.264' },
@@ -1382,13 +1779,21 @@ styleCards.forEach(card => {
   });
 });
 
-function showError(msg) {
+function showError(msg, resumable = false) {
   progressPanel.classList.remove('visible');
   errorBanner.textContent = '⚠ ' + msg;
   errorBanner.classList.add('visible');
+  if (resumable) {
+    resumeJobId = null; // keep previous behavior: resume button is wired by onResumeJob, not here
+    btnResume.style.display = 'none';
+  } else {
+    btnResume.style.display = 'none';
+    resumeJobId = null;
+  }
   btnProcess.disabled = false;
   btnProcess.textContent = '⚡ Generate Lyrics Video, Instrumental & Thumbnail';
   spinner.style.display = '';
+  showJobs();
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
