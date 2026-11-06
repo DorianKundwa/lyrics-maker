@@ -221,6 +221,27 @@
   }
   .drop-zone.filled .dz-badge { display: grid; }
 
+  /* ── Audio preview player inside dropzone ── */
+  .audio-preview-wrap {
+    width: 100%;
+    margin-top: 10px;
+    position: relative;
+    z-index: 5;
+    background: rgba(4, 6, 12, 0.7);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 8px;
+    box-sizing: border-box;
+    animation: fadeUp .3s ease both;
+  }
+  .audio-preview-wrap audio {
+    width: 100%;
+    height: 32px;
+    display: block;
+    outline: none;
+    accent-color: var(--accent);
+  }
+
   /* ── Optional pill ── */
   .optional-pill {
     display: inline-block;
@@ -808,6 +829,9 @@
         <div class="dz-label">Main Audio</div>
         <div class="dz-hint">MP3, WAV, M4A, OGG…</div>
         <div class="dz-filename" id="fn-audio"></div>
+        <div class="audio-preview-wrap" id="prev-wrap-audio" style="display:none;" onclick="event.stopPropagation()">
+          <audio id="audio-preview-audio" controls preload="metadata"></audio>
+        </div>
       </div>
 
       <div class="drop-zone" id="dz-outro">
@@ -817,6 +841,9 @@
         <div class="dz-label">Outro Audio <span class="optional-pill">optional</span></div>
         <div class="dz-hint">Appended after main audio</div>
         <div class="dz-filename" id="fn-outro"></div>
+        <div class="audio-preview-wrap" id="prev-wrap-outro" style="display:none;" onclick="event.stopPropagation()">
+          <audio id="audio-preview-outro" controls preload="metadata"></audio>
+        </div>
       </div>
 
     </div>
@@ -1146,6 +1173,31 @@
 
 <script>
 // ── Drop-zone interactivity ────────────────────────────────────────────────
+function updateAudioPreview(inputId, wrapId, audioId) {
+  const input = document.getElementById(inputId);
+  const wrap = document.getElementById(wrapId);
+  const player = document.getElementById(audioId);
+  if (!input || !wrap || !player) return;
+  const file = input.files && input.files[0];
+  if (file && (file.type.startsWith('audio/') || file.type.startsWith('video/') || /\.(mp3|wav|m4a|ogg|flac|aac)$/i.test(file.name))) {
+    if (player._blobUrl) {
+      URL.revokeObjectURL(player._blobUrl);
+    }
+    const url = URL.createObjectURL(file);
+    player._blobUrl = url;
+    player.src = url;
+    wrap.style.display = 'block';
+  } else {
+    player.pause();
+    if (player._blobUrl) {
+      URL.revokeObjectURL(player._blobUrl);
+      player._blobUrl = null;
+    }
+    player.removeAttribute('src');
+    wrap.style.display = 'none';
+  }
+}
+
 document.querySelectorAll('.drop-zone').forEach(zone => {
   const input = zone.querySelector('input[type="file"]');
   if (!input) return;
@@ -1171,8 +1223,16 @@ document.querySelectorAll('.drop-zone').forEach(zone => {
       input.files = dt.files;
       zone.classList.add('filled');
       if (fnEl) fnEl.textContent = e.dataTransfer.files[0].name;
+      input.dispatchEvent(new Event('change'));
     }
   });
+});
+
+document.getElementById('audio').addEventListener('change', () => {
+  updateAudioPreview('audio', 'prev-wrap-audio', 'audio-preview-audio');
+});
+document.getElementById('outro').addEventListener('change', () => {
+  updateAudioPreview('outro', 'prev-wrap-outro', 'audio-preview-outro');
 });
 
 // ── Form submit ────────────────────────────────────────────────────────────
@@ -1297,14 +1357,14 @@ function renderJobs(jobs) {
       thumbHtml = `
         <div class="job-thumb" onclick="toggleCardVideo(this,'${eid}')">
           <img id="thumb-img-${eid}" src="/api/download/${eid}/thumbnail" alt="Thumbnail" loading="lazy">
-          ${hasVideo ? `<video id="card-video-${eid}" src="/api/download/${eid}/lyrics_video" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" preload="none" controls></video>` : ''}
+          ${hasVideo ? `<video id="card-video-${eid}" src="/api/download/${eid}/lyrics_video" onclick="event.stopPropagation()" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;" preload="none" controls></video><button type="button" class="video-close-btn" onclick="event.stopPropagation(); closeCardVideo('${eid}')" style="display:none; position:absolute; top:8px; right:8px; z-index:4; background:rgba(0,0,0,0.85); color:#fff; border:1px solid rgba(255,255,255,0.25); border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:12px; line-height:22px; text-align:center;">✕</button>` : ''}
           ${styleName ? `<div class="job-style-badge">${escapeHtml(styleName)}</div>` : ''}
           ${hasVideo ? `<div class="play-overlay">▶</div>` : ''}
         </div>`;
     } else if (finished && hasVideo) {
       thumbHtml = `
         <div class="job-thumb" style="cursor:default;">
-          <video src="/api/download/${eid}/lyrics_video" style="width:100%;height:100%;object-fit:cover;display:block;" preload="none" controls></video>
+          <video src="/api/download/${eid}/lyrics_video" onclick="event.stopPropagation()" style="width:100%;height:100%;object-fit:cover;display:block;z-index:2;" preload="none" controls></video>
           ${styleName ? `<div class="job-style-badge">${escapeHtml(styleName)}</div>` : ''}
         </div>`;
     } else if (running) {
@@ -1369,6 +1429,7 @@ function renderJobs(jobs) {
         ${actions.length ? `<div class="job-actions">${actions.join('')}</div>` : ''}
       </div>`;
   }).join('');
+  startJobsAutoPollingIfNeeded(jobs);
 }
 
 function attachJobCardHandlers() {
@@ -1497,22 +1558,52 @@ attachJobCardHandlers();
 
 // Toggle between thumbnail preview and inline video player in job cards.
 function toggleCardVideo(thumbEl, jid) {
-  const img   = thumbEl.querySelector('img');
-  const video = thumbEl.querySelector('video');
+  const img      = thumbEl.querySelector('img');
+  const video    = thumbEl.querySelector('video');
+  const closeBtn = thumbEl.querySelector('.video-close-btn');
   if (!video) return;
   const isShowing = video.style.display !== 'none';
   if (isShowing) {
     video.pause();
     video.style.display = 'none';
+    if (closeBtn) closeBtn.style.display = 'none';
     if (img) img.style.display = '';
-    thumbEl.querySelector('.play-overlay') && (thumbEl.querySelector('.play-overlay').style.display = '');
+    const po = thumbEl.querySelector('.play-overlay');
+    if (po) po.style.display = '';
   } else {
     if (img) img.style.display = 'none';
     video.style.display = 'block';
     video.style.position = 'absolute';
     video.style.inset = '0';
-    thumbEl.querySelector('.play-overlay') && (thumbEl.querySelector('.play-overlay').style.display = 'none');
+    if (closeBtn) closeBtn.style.display = 'block';
+    const po = thumbEl.querySelector('.play-overlay');
+    if (po) po.style.display = 'none';
     video.play().catch(() => {});
+  }
+}
+
+function closeCardVideo(jid) {
+  const video = document.getElementById(`card-video-${jid}`);
+  if (!video) return;
+  const thumbEl = video.closest('.job-thumb');
+  if (thumbEl) toggleCardVideo(thumbEl, jid);
+}
+
+// Auto-poll job history while any job is active in the background
+let _jobsPollTimer = null;
+function startJobsAutoPollingIfNeeded(jobs) {
+  clearInterval(_jobsPollTimer);
+  const hasActive = jobs && Object.values(jobs).some(j => j && ['queued', 'running'].includes(j.status));
+  if (hasActive) {
+    _jobsPollTimer = setInterval(async () => {
+      try {
+        const res = await fetch('/api/jobs');
+        if (res.ok) {
+          const freshJobs = await res.json();
+          renderJobs(freshJobs);
+        }
+      } catch (e) {}
+    }, 3000);
   }
 }
 
