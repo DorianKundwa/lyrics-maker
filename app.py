@@ -8,6 +8,7 @@ import shutil
 import uuid
 import re
 import time
+import zipfile
 from pathlib import Path
 from typing import Optional
 
@@ -640,6 +641,7 @@ async def _run_job(
             # A cancel that arrived during the last stage must win over "complete".
             check_cancelled()
             srt_path = out_dir / "lyrics.srt"
+            lrc_path = out_dir / "lyrics.lrc"
             now = time.time()
             job.update(
                 status="complete",
@@ -654,9 +656,8 @@ async def _run_job(
                     "lyrics_video":  str(lv_path),
                     "instrumental":  str(inst_path),
                     "thumbnail":     str(thumb_path),
-                    **({
-                        "lyrics_srt": str(srt_path),
-                    } if srt_path.exists() else {}),
+                    **({"lyrics_srt": str(srt_path)} if srt_path.exists() else {}),
+                    **({"lyrics_lrc": str(lrc_path)} if lrc_path.exists() else {}),
                 },
             )
             _persist_jobs()
@@ -677,8 +678,8 @@ async def _run_job(
                     f"Lyric Editor data could not be saved, so the editor is unavailable for this job ({exc})."
                 )
 
-            # Cleanup intermediate files in out_dir (keep SRT for download)
-            keep_files = {lv_path.name, inst_path.name, thumb_path.name, "lyrics.srt"}
+            # Cleanup intermediate files in out_dir (keep SRT and LRC for download)
+            keep_files = {lv_path.name, inst_path.name, thumb_path.name, "lyrics.srt", "lyrics.lrc"}
             for f in out_dir.iterdir():
                 if f.is_file() and f.name not in keep_files:
                     try:
@@ -863,9 +864,61 @@ def download(job_id: str, file_key: str):
     if not path.exists():
         # Outputs are removed an hour after the job, but the job record is kept.
         return JSONResponse({"error": "Output expired. Run the job again."}, status_code=410)
-    _mime_map = {".mp4": "video/mp4", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".srt": "text/plain"}
+    _mime_map = {
+        ".mp4": "video/mp4",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".srt": "text/plain",
+        ".lrc": "text/plain",
+        ".json": "application/json",
+    }
     media = _mime_map.get(path.suffix.lower(), "application/octet-stream")
     return FileResponse(path, media_type=media, filename=path.name)
+
+
+@app.get("/api/jobs/{job_id}/download-all")
+def download_all(job_id: str):
+    """Bundle all available rendered files into a single ZIP for one-click download."""
+    if job_id not in _jobs or _jobs[job_id].get("status") != "complete":
+        return JSONResponse({"error": "Job not found or not complete"}, status_code=404)
+    job = _jobs[job_id]
+    files = job.get("files", {})
+    existing_files: list[tuple[str, Path]] = []
+    for key, path_str in files.items():
+        p = Path(path_str)
+        if p.exists():
+            existing_files.append((p.name, p))
+
+    # Also include corrected video if re-rendered
+    out_dir = OUTPUT_DIR / job_id
+    corrected = out_dir / "lyrics_video_corrected.mp4"
+    if corrected.exists() and not any(name == corrected.name for name, _ in existing_files):
+        existing_files.append((corrected.name, corrected))
+
+    if not existing_files:
+        return JSONResponse(
+            {"error": "Outputs expired or not available on disk. Please generate again."},
+            status_code=410,
+        )
+
+    title = (job.get("title") or "").strip()
+    artist = (job.get("artist") or "").strip()
+    if artist and title:
+        base_name = f"{artist} - {title}"
+    elif title or artist:
+        base_name = title or artist
+    else:
+        base_name = f"lyrics_{job_id[:8]}"
+    safe_base = re.sub(r'[^\w\s.\-]', '_', base_name).strip() or "lyrics_bundle"
+    zip_filename = f"{safe_base}.zip"
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    zip_path = out_dir / "_bundle.zip"
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for arcname, p in existing_files:
+            zf.write(p, arcname=arcname)
+
+    return FileResponse(zip_path, media_type="application/zip", filename=zip_filename)
 
 
 @app.get("/api/lyrics")

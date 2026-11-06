@@ -113,3 +113,54 @@ def test_completed_job_cannot_be_resumed(tmp_path, monkeypatch):
     response = app.resume_job("job1", BackgroundTasks())
 
     assert response.status_code == 409
+
+
+def test_download_all_bundles_files_into_zip(tmp_path, monkeypatch):
+    out_dir = tmp_path / "outputs" / "job1"
+    out_dir.mkdir(parents=True)
+    video = out_dir / "lyrics_video.mp4"
+    video.write_bytes(b"fake_video")
+    thumb = out_dir / "thumbnail.jpg"
+    thumb.write_bytes(b"fake_thumb")
+
+    monkeypatch.setattr(app, "OUTPUT_DIR", tmp_path / "outputs")
+    monkeypatch.setattr(app, "_jobs", {
+        "job1": {
+            "status": "complete",
+            "title": "My Song",
+            "artist": "My Artist",
+            "files": {
+                "lyrics_video": str(video),
+                "thumbnail": str(thumb),
+            },
+        }
+    })
+
+    response = app.download_all("job1")
+    assert response.status_code == 200
+    assert response.media_type == "application/zip"
+    cd = response.headers.get("content-disposition", "")
+    assert "My" in cd and "Song.zip" in cd
+    zip_path = Path(response.path)
+    assert zip_path.exists()
+
+    import zipfile
+    with zipfile.ZipFile(zip_path, "r") as zf:
+        namelist = zf.namelist()
+        assert "lyrics_video.mp4" in namelist
+        assert "thumbnail.jpg" in namelist
+
+
+def test_generate_thumbnail_without_title(tmp_path):
+    from PIL import Image
+    import processor as proc
+
+    bg = tmp_path / "bg.jpg"
+    img = Image.new("RGB", (1920, 1080), "#112233")
+    img.save(bg, "JPEG")
+    thumb = tmp_path / "thumb.jpg"
+
+    # Must not raise UnboundLocalError when title is empty
+    proc.generate_thumbnail(bg, thumb, title="", artist="Solo Artist")
+    assert thumb.exists()
+    assert thumb.stat().st_size > 0

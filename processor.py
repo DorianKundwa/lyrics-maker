@@ -828,6 +828,7 @@ def generate_thumbnail(
         font_path_reg = FONT_REGULAR
 
     cx = size[0] // 2
+    font_size_title = 0
 
     # Title (large, bold, centered)
     if title:
@@ -842,14 +843,14 @@ def generate_thumbnail(
             font_size_title -= 10
             font_title = load_font(font_path_bold, font_size_title)
 
-        ty = size[1] // 2 - 60
+        ty = size[1] // 2 - (60 if artist else 0)
         
         # Drop shadow
         draw.text((cx + 12, ty + 12), title, font=font_title, fill=(0, 0, 0, 200), anchor="mm")
         # Main text with outline
         draw.text((cx, ty), title, font=font_title, fill=(255, 255, 255, 255), anchor="mm", stroke_width=6, stroke_fill=(0, 0, 0, 255))
 
-    # Artist name (smaller, below title)
+    # Artist name (smaller, below title or centered if no title)
     if artist:
         max_width = size[0] - 80
         font_size_artist = 120
@@ -862,7 +863,10 @@ def generate_thumbnail(
             font_size_artist -= 5
             font_artist = load_font(font_path_reg, font_size_artist)
 
-        ay = size[1] // 2 + (font_size_title // 2) + 10
+        if title:
+            ay = size[1] // 2 + (font_size_title // 2) + 10
+        else:
+            ay = size[1] // 2
         
         # Drop shadow
         draw.text((cx + 6, ay + 6), artist, font=font_artist, fill=(0, 0, 0, 200), anchor="mm")
