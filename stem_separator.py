@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import shutil
 from pathlib import Path
@@ -47,7 +48,8 @@ def separate_audio(
             env["TORCH_HOME"] = str(_MODEL_CACHE)
 
             # demucs outputs to out_dir / htdemucs / base_name / {vocals.wav, no_vocals.wav}
-            cmd = ["demucs", "-n", "htdemucs", "--two-stems=vocals", "-o", out_dir, audio_path]
+            demucs_exec = [shutil.which("demucs")] if shutil.which("demucs") else [sys.executable, "-m", "demucs"]
+            cmd = demucs_exec + ["-n", "htdemucs", "--two-stems=vocals", "-o", out_dir, audio_path]
             subprocess.run(cmd, check=True, capture_output=True, env=env)
             
             demucs_dir = os.path.join(out_dir, "htdemucs", base_name)

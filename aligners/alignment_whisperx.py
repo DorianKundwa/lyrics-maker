@@ -759,15 +759,16 @@ def align(
         # pyannote 0.0.1 and reports "no active speech" on ordinary vocals here.
         # Silero is the same VAD whisperx uses as its alternative and works.
         try:
-            model = whisperx.load_model(
-                "small", device=device, compute_type=compute_type,
-                vad_method="silero",
-            )
-        except TypeError:  # older whisperx without the vad_method argument
-            model = whisperx.load_model("small", device=device, compute_type=compute_type)
-
-        # Restore inspect.stack
-        inspect.stack = _orig_stack
+            try:
+                model = whisperx.load_model(
+                    "small", device=device, compute_type=compute_type,
+                    vad_method="silero",
+                )
+            except TypeError:  # older whisperx without the vad_method argument
+                model = whisperx.load_model("small", device=device, compute_type=compute_type)
+        finally:
+            # Always restore inspect.stack even if loading fails
+            inspect.stack = _orig_stack
         # ---------------------------------------------------------------
 
         audio = whisperx.load_audio(wav_path)
