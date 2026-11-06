@@ -13,6 +13,11 @@
   comparison is like-for-like and the app's numbers should be at least as good.
 - Harness: `python tools/eval_alignment.py --engine forced|whisperx`.
 
+> **Note (2026-11-06):** the runtime default has since been switched to WhisperX
+> because MMS_FA drifts on tracks with abrupt tempo changes. The numbers below are
+> the original like-for-like comparison and still describe each engine; the
+> harness default remains `--engine forced` so this table can be reproduced.
+
 ## Results
 
 | Track | Words | Forced (MMS_FA) | WhisperX | Delta |
@@ -57,6 +62,24 @@ only correct occurrence is more than 15 s from that anchor is still left flagged
 - Forced aligner: roughly 1–2 minutes per 2–3 minute song on CPU, plus a one-time
   ~1.2 GB MMS_FA model download.
 - WhisperX path: several minutes per song.
+
+## VAD fix and default change (2026-11-06)
+
+WhisperX's bundled Pyannote VAD checkpoint was trained against pyannote 0.0.1 and
+reported "no active speech" on ordinary vocals in this environment, so WhisperX
+transcribed nothing and its scores above are pessimistic. It now loads with
+`vad_method="silero"`. Re-scoring Baila end-to-end on the mix gives **44.7%**
+(MAE 3.861 s), up from 3.5%, but still far below MMS_FA's 99.6% on that track. The
+other WhisperX numbers in the table were produced with the old VAD and should be
+treated as lower bounds.
+
+The runtime default is now WhisperX, because its transcript-driven timings do not
+rely on the monotonic CTC assumption that drifts on a slow intro that turns into
+fast rap. Forced and combo remain available with `LYRIC_ALIGN_ENGINE=forced|combo`.
+
+WhisperX also needs `numpy<2` and `pandas>=2.2` here: the installed user-site
+spacy/thinc wheels were built against numpy 1.x, and pandas 1.5 cannot load with
+numpy 2. Both pins are in `requirements.txt`.
 
 ## Combo repair (measured 2026-11-05)
 

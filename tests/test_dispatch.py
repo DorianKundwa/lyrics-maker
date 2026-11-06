@@ -1,5 +1,6 @@
-"""Engine dispatch: forced alignment first, WhisperX when it cannot run."""
+"""Engine dispatch: WhisperX by default, forced/combo when selected or as fallback."""
 import sys
+import types
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -13,57 +14,65 @@ import aligners.forced_align_mms as forced_mod  # noqa: E402
 FRAGMENTS = '{"fragments": [{"begin": "1.000", "end": "2.000", "lines": ["a"], "words": []}]}'
 
 
-def test_forced_alignment_is_used_when_it_works(monkeypatch, tmp_path):
-    out = tmp_path / "forced.json"
-
-    def fake_forced(audio, lyrics, output_json=None, language=None):
+def _writer(path):
+    def fake(audio, lyrics, output_json=None, language=None, **kwargs):
         Path(output_json).write_text(FRAGMENTS, encoding="utf-8")
         return str(output_json)
 
-    def forbidden(*a, **k):
-        raise AssertionError("WhisperX must not run when forced alignment succeeds")
+    return fake
 
-    monkeypatch.setattr(forced_mod, "align_lyrics", fake_forced)
-    monkeypatch.setattr(whisperx_mod, "align", forbidden)
+
+def _forbidden(label):
+    def refuse(*a, **k):
+        raise AssertionError(f"{label} must not run")
+
+    return refuse
+
+
+def test_whisperx_is_the_default_engine(monkeypatch, tmp_path):
+    monkeypatch.delenv("LYRIC_ALIGN_ENGINE", raising=False)
+    monkeypatch.setitem(sys.modules, "whisperx", types.ModuleType("whisperx"))
+    out = tmp_path / "whisperx.json"
+    monkeypatch.setattr(whisperx_mod, "align", _writer(out))
+    monkeypatch.setattr(aligners.alignment_combo, "align_lyrics", _forbidden("combo"))
+    monkeypatch.setattr(forced_mod, "align_lyrics", _forbidden("forced"))
 
     path = aligners.align("song.wav", "lyrics.txt", str(out))
     assert path == str(out)
 
 
-def test_forced_engine_skips_the_combo_repair(monkeypatch, tmp_path):
-    out = tmp_path / "forced_only.json"
-    called = {"combo": False}
-
-    def forbidden_combo(*a, **k):
-        called["combo"] = True
-        raise AssertionError("combo must not run when LYRIC_ALIGN_ENGINE=forced")
-
-    def fake_forced(audio, lyrics, output_json=None, language=None):
-        Path(output_json).write_text(FRAGMENTS, encoding="utf-8")
-        return str(output_json)
-
+def test_forced_engine_starts_with_forced_alignment(monkeypatch, tmp_path):
     monkeypatch.setenv("LYRIC_ALIGN_ENGINE", "forced")
-    monkeypatch.setattr(aligners.alignment_combo, "align_lyrics", forbidden_combo)
-    monkeypatch.setattr(forced_mod, "align_lyrics", fake_forced)
-
-    path = aligners.align("song.wav", "lyrics.txt", str(out))
-    assert called["combo"] is False
-    assert path == str(out)
-
-
-def test_forced_failure_falls_back_to_whisperx(monkeypatch, tmp_path):
-    out = tmp_path / "wx.json"
-
-    def broken_forced(*a, **k):
-        raise RuntimeError("torchaudio forced_align unavailable")
-
-    def fake_whisperx(audio, lyrics, output_json=None, language=None):
-        Path(output_json).write_text(FRAGMENTS, encoding="utf-8")
-        return str(output_json)
-
-    monkeypatch.setattr(forced_mod, "align_lyrics", broken_forced)
-    monkeypatch.setattr(whisperx_mod, "align", fake_whisperx)
+    out = tmp_path / "forced.json"
+    monkeypatch.setattr(forced_mod, "align_lyrics", _writer(out))
+    monkeypatch.setattr(whisperx_mod, "align", _forbidden("WhisperX"))
+    monkeypatch.setattr(aligners.alignment_combo, "align_lyrics", _forbidden("combo"))
 
     path = aligners.align("song.wav", "lyrics.txt", str(out))
     assert path == str(out)
-    assert Path(path).exists()
+
+
+def test_combo_engine_starts_with_the_forced_repair(monkeypatch, tmp_path):
+    monkeypatch.setenv("LYRIC_ALIGN_ENGINE", "combo")
+    out = tmp_path / "combo.json"
+    monkeypatch.setattr(aligners.alignment_combo, "align_lyrics", _writer(out))
+    monkeypatch.setattr(whisperx_mod, "align", _forbidden("WhisperX"))
+
+    path = aligners.align("song.wav", "lyrics.txt", str(out))
+    assert path == str(out)
+
+
+def test_whisperx_failure_falls_back_to_combo(monkeypatch, tmp_path):
+    monkeypatch.delenv("LYRIC_ALIGN_ENGINE", raising=False)
+    monkeypatch.setitem(sys.modules, "whisperx", types.ModuleType("whisperx"))
+    out = tmp_path / "fallback.json"
+
+    def broken_whisperx(*a, **k):
+        raise RuntimeError("whisperx unavailable")
+
+    monkeypatch.setattr(whisperx_mod, "align", broken_whisperx)
+    monkeypatch.setattr(aligners.alignment_combo, "align_lyrics", _writer(out))
+    monkeypatch.setattr(forced_mod, "align_lyrics", _forbidden("forced"))
+
+    path = aligners.align("song.wav", "lyrics.txt", str(out))
+    assert path == str(out)

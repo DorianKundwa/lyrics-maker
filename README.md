@@ -12,7 +12,7 @@ A self-hosted web app that takes your audio, lyrics, background image, and optio
 
 | Tool | Version |
 |------|---------|
-| Python | 3.9+ |
+| Python | 3.9–3.12 |
 | FFmpeg | 5.0+ (with libass, libx264) |
 
 ### Install FFmpeg
@@ -33,13 +33,28 @@ brew install ffmpeg
 
 ```bash
 cd lyrics-video-maker
+python -m venv venv
+```
+
+Windows:
+
+```bat
+venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+macOS / Linux:
+
+```bash
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
 The alignment and stem dependencies are large: torch/torchaudio plus model
-weights on first use (MMS_FA ~1.2 GB, faster-whisper `small` ~500 MB, Demucs
-~1.3 GB). They are what make the accurate alignment path work; without them the
-app falls back to Aeneas timing and FFmpeg phase cancellation.
+weights on first use. WhisperX (the default) downloads the Whisper `small`
+model plus a language-specific alignment model; Demucs is ~1.3 GB. The ~1.2 GB
+MMS_FA checkpoint is only downloaded if you switch to the `combo` or `forced`
+engine. Without these, the app falls back to Aeneas timing and FFmpeg phase
+cancellation.
 
 ### Optional: lyrics provider token
 
@@ -55,6 +70,14 @@ Only `GENIUS_ACCESS_TOKEN` is read; the other Genius values are ignored.
 ---
 
 ## Running the Server
+
+### Windows
+
+Double-click **`run.bat`**. It runs from the project folder, checks the WhisperX
+alignment stack (and offers to install `requirements.txt` if anything is
+missing), picks a free port, and opens the browser.
+
+### Any platform
 
 ```bash
 python -m uvicorn app:app --host 127.0.0.1 --port 8000
@@ -73,8 +96,9 @@ The server listens on `127.0.0.1` only, so other devices on your network can't r
 3. **Upload Outro Audio** *(optional)* — Appended to the end of main audio before rendering
 4. **Upload Background Image** — JPG, PNG, WEBP in any resolution (auto-cropped to 16:9)
 5. **Upload Lyrics File** — see format options below
-6. Click **⚡ Generate** and wait ~1–3 minutes depending on song length
-7. Download your three output files
+6. **Choose the vocal language** — English by default; use Auto-detect for non-English lyrics
+7. Click **⚡ Generate** and wait ~1–3 minutes depending on song length
+8. Download your three output files
 
 ---
 
@@ -119,8 +143,9 @@ lyrics-video-maker/
 ├── stem_separator.py      ← Demucs vocals/instrumental separation
 ├── lyrics_fetcher.py      ← LRCLIB / Genius / AZLyrics lookup
 ├── youtube_downloader.py  ← YouTube → MP3 (yt-dlp)
+├── run.bat                ← Windows launcher (dependency check, free port, browser)
 ├── aligners/
-│   ├── __init__.py        ← Engine cascade (combo → forced → WhisperX → Aeneas)
+│   ├── __init__.py        ← Engine cascade (WhisperX → combo → forced → Aeneas)
 │   ├── alignment_combo.py ← Forced alignment + Whisper repair of flagged lines
 │   ├── forced_align_mms.py← MMS_FA CTC forced alignment
 │   ├── alignment_whisperx.py
@@ -155,30 +180,50 @@ lyrics-video-maker/
 
 When the lyrics carry no timestamps, the engines are tried in this order:
 
-1. **Forced + Whisper (`combo`, default)** — `aligners/alignment_combo.py` still
-   places every *known* lyric word on the isolated vocal with MMS_FA, so timing
-   comes from the audio rather than a transcript. Only the lines the forced
-   aligner itself flags (they span a silence, take far longer than their word
-   count can sustain, or put the same line twice at the same moment) get a second
-   opinion: a short window around the line is transcribed with faster-whisper and
-   replaces the forced times only when the transcript confirms at least 60% of
-   that line's words. Clean lines cost no speech recognition at all. Downloads a
-   ~1.2 GB MMS_FA checkpoint and a ~500 MB Whisper model on first use; needs
-   torchaudio 2.6–2.8 (`torchaudio.functional.forced_align` was removed in 2.9).
-2. **MMS_FA only** — set `LYRIC_ALIGN_ENGINE=forced` to skip the repair pass.
-3. **WhisperX** — transcribes the vocal, then matches transcript words to the lyrics.
+1. **WhisperX (default)** — transcribes the isolated vocal with Whisper, then
+   matches the transcript words to your lyrics. Because the timings come from
+   what is actually sung, a track that opens slowly and then switches to fast
+   rap does not drag every later line out of sync. Uses the `small` Whisper
+   model plus a language-specific alignment model on first use, and takes
+   several minutes per song on CPU.
+2. **Forced + Whisper repair (`combo`)** — set `LYRIC_ALIGN_ENGINE=combo` to
+   place every *known* lyric word on the vocal with MMS_FA (no transcription in
+   the loop), then re-check only the lines MMS_FA flags with a short
+   faster-whisper window. Fast and accurate on steady-tempo songs, but the
+   monotonic CTC pass can drift when the tempo changes abruptly. Downloads a
+   ~1.2 GB MMS_FA checkpoint; needs torchaudio 2.6–2.8
+   (`torchaudio.functional.forced_align` was removed in 2.9).
+3. **MMS_FA only** — set `LYRIC_ALIGN_ENGINE=forced` to skip the repair pass.
 4. **Aeneas / heuristic** — last-resort fallbacks.
+
+If the selected engine fails, the others are tried in turn, so a missing model
+or a failed transcription does not leave you without timed lyrics.
+
+**Vocal Language** on the form defaults to English. Choose Auto-detect (or the
+song's own language) for non-English lyrics. The hint is passed to WhisperX and
+to the combo repair pass; plain MMS_FA forced alignment ignores it.
 
 | Variable | Default | Effect |
 |---|---|---|
-| `LYRIC_ALIGN_ENGINE` | `combo` | `combo` (forced + repair), `forced`, or `auto` |
-| `LYRIC_WHISPER_MODEL` | `small` | faster-whisper model used for the repair pass |
+| `LYRIC_ALIGN_ENGINE` | `whisperx` | `whisperx` (default), `combo` (forced + repair), `forced`, or `auto` |
+| `LYRIC_WHISPER_MODEL` | `small` | faster-whisper model used by the combo repair pass |
+
+The benchmark below was measured before WhisperX became the default. Forced
+alignment and combo still score higher on that five-track set, so
+`LYRIC_ALIGN_ENGINE=forced` or `combo` is worth trying for steady-tempo material.
+WhisperX is the default because its transcript-driven timings do not depend on
+the monotonic CTC assumption that drifts on a slow intro that turns into fast
+rap — the case this switch is for.
 
 Measured on five Spanish songs from JamendoLyrics with word-level reference timings,
 the forced aligner places **93.7%** of word onsets within ±0.3 s (mean error 0.06–0.22 s
-on four of the five tracks) against **30.8%** for WhisperX. The one weak track still
-beats the old path (76.3% vs 3.3%); its stalled lines are marked `suspicious` in the
-alignment JSON with a reason. On the same five mix tracks the default combo engine
+on four of the five tracks) against **30.8%** for WhisperX at the time. WhisperX's
+bundled Pyannote VAD was returning no speech on this machine; with Silero VAD it now
+re-scores Baila at **44.7%** (MAE 3.86 s) instead of 3.5%, still below forced on that
+mix. The app aligns the Demucs vocal stem, where both engines do better. The one
+weak forced track still beats the old path (76.3% vs 3.3%); its stalled lines are
+marked `suspicious` in the alignment JSON with a reason. On the same five mix tracks
+the combo engine
 measures **94.3%** (MAE 0.72 s) against 93.7% for forced alone, by repairing three
 Caralibro lines (76.3% → 80.6%); the other four tracks have no flagged lines and
 cost no speech recognition. On the app's Demucs vocal stem, Caralibro scores

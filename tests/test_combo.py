@@ -242,7 +242,7 @@ def test_language_vote_without_a_majority_is_refused():
     assert combo._detect_repair_language(_Model(), samples, 16000) is None
 
 
-def test_dispatch_prefers_the_combo_engine(monkeypatch, tmp_path):
+def test_dispatch_honours_the_combo_engine(monkeypatch, tmp_path):
     out = tmp_path / "combo.json"
 
     def fake_combo(audio, lyrics, output_json=None, language=None):

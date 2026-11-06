@@ -823,7 +823,7 @@ def generate_lyrics_video(
     font_name: str = "Arial",
     font_size: int = 72,
     word_highlight: bool = True,
-    language: str = "",
+    language: str = "en",
     active_color: str = "#FFFFFF",
     upcoming_color: str = "#FF0000",
     sung_color: str = "#FFFFFF",

@@ -668,6 +668,7 @@ def align(
     lyrics_path: str,
     output_json: Optional[str] = None,
     language: Optional[str] = None,
+    fallback: bool = True,
 ) -> str:
     if output_json is None:
         base = os.path.splitext(os.path.basename(audio_path))[0]
@@ -754,7 +755,16 @@ def align(
         print(f"[whisperx] Device: {device}, compute: {compute_type}")
 
         print("[whisperx] Loading ASR model (small)...")
-        model = whisperx.load_model("small", device=device, compute_type=compute_type)
+        # The pyannote VAD checkpoint bundled with whisperx was trained against
+        # pyannote 0.0.1 and reports "no active speech" on ordinary vocals here.
+        # Silero is the same VAD whisperx uses as its alternative and works.
+        try:
+            model = whisperx.load_model(
+                "small", device=device, compute_type=compute_type,
+                vad_method="silero",
+            )
+        except TypeError:  # older whisperx without the vad_method argument
+            model = whisperx.load_model("small", device=device, compute_type=compute_type)
 
         # Restore inspect.stack
         inspect.stack = _orig_stack
@@ -793,6 +803,8 @@ def align(
                     asr_words.append(w)
         asr_words.sort(key=lambda x: x.get("start", 0.0))
         print(f"[whisperx] Got {len(asr_words)} word timestamps")
+        if not asr_words:
+            raise RuntimeError("WhisperX returned no word timestamps (VAD or ASR found no speech)")
 
         print("[whisperx] Mapping to user lyrics (global DP + matched-anchor bounds)...")
         fragments = _map_asr_words_to_lyrics(asr_words, lyric_lines, audio_duration)
@@ -804,8 +816,11 @@ def align(
         return output_json
 
     except Exception as e:
-        print(f"[whisperx] WhisperX failed: {e}. Using heuristic fallback.")
+        print(f"[whisperx] WhisperX failed: {e}")
         import traceback; traceback.print_exc()
+        if not fallback:
+            raise
+        print("[whisperx] Using heuristic fallback.")
         return _heuristic_align(wav_path, lyrics_path, output_json, language=lang)
 
 
