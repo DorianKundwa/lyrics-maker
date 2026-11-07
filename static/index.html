@@ -363,6 +363,75 @@
     animation: fadeUp .5s ease both;
   }
 
+  /* ── Batch queue ── */
+  .batch-panel {
+    margin-top: 48px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 24px 26px;
+    animation: fadeUp .5s .1s ease both;
+  }
+  /* The pairing summary shares the header row, so drop the divider rule and
+     let the title keep its line instead of wrapping around a long status. */
+  .batch-panel .section-label {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .batch-panel .section-label .batch-title {
+    white-space: nowrap;
+  }
+  .batch-panel .section-label::after { display: none; }
+  .batch-panel .section-label .inline-status {
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  /* The card already fades in; dropping the button's own fadeUp keeps its
+     animation fill-mode from overriding the :disabled opacity. */
+  .batch-panel .btn-process { animation: none; }
+  .batch-hint {
+    font-size: .8rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0 0 18px;
+  }
+  .batch-hint code {
+    background: rgba(255,255,255,.06);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--text);
+  }
+  .batch-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .8rem;
+    margin-bottom: 14px;
+  }
+  .batch-table th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: .7rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .batch-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+  .batch-table td:last-child { color: var(--muted); }
+  .batch-problems {
+    margin: 0 0 14px;
+    padding-left: 18px;
+    font-size: .8rem;
+    color: #ff8fa5;
+    line-height: 1.6;
+  }
+
   /* ── Previous jobs panel ── */
   .jobs-panel {
     display: none;
@@ -1135,6 +1204,53 @@
 
   </form>
 
+  <!-- Batch queue -->
+  <div class="batch-panel" id="batchPanel">
+    <div class="section-label" style="margin-top:0;">
+      <span class="num">📚</span> <span class="batch-title">Batch queue</span>
+      <span class="inline-status" id="batchStatus"></span>
+    </div>
+    <p class="batch-hint">
+      Pair each audio file with the lyrics file of the same name
+      (<code>song.mp3</code> + <code>song.txt</code>). Every pair becomes its own job in Previous
+      jobs, using the settings above and titled after its filename. Nothing is queued until every
+      song has exactly one lyrics file.
+    </p>
+    <div class="upload-grid three">
+
+      <div class="drop-zone batch-drop" id="dz-batch-audio">
+        <input type="file" id="batch_audio" accept="audio/*,video/*" multiple>
+        <div class="dz-badge">✓</div>
+        <div class="dz-icon">🎧</div>
+        <div class="dz-label">Batch Audio</div>
+        <div class="dz-hint">Select as many songs as you like</div>
+        <div class="dz-filename" id="fn-batch-audio"></div>
+      </div>
+
+      <div class="drop-zone batch-drop" id="dz-batch-lyrics">
+        <input type="file" id="batch_lyrics" accept=".lrc,.txt,.srt" multiple>
+        <div class="dz-badge">✓</div>
+        <div class="dz-icon">📝</div>
+        <div class="dz-label">Batch Lyrics</div>
+        <div class="dz-hint">One file per song, same name as the audio</div>
+        <div class="dz-filename" id="fn-batch-lyrics"></div>
+      </div>
+
+      <div class="drop-zone batch-drop" id="dz-batch-bg">
+        <input type="file" id="batch_background" accept="image/*">
+        <div class="dz-badge">✓</div>
+        <div class="dz-icon">🖼</div>
+        <div class="dz-label">Shared Background <span class="optional-pill">optional</span></div>
+        <div class="dz-hint">Used for every song in the batch</div>
+        <div class="dz-filename" id="fn-batch-bg"></div>
+      </div>
+
+    </div>
+
+    <div id="batchReview"></div>
+    <button type="button" class="btn-process" id="btnBatch" disabled>📚 Queue batch</button>
+  </div>
+
   <!-- Progress -->
   <div class="progress-panel" id="progressPanel">
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1198,7 +1314,8 @@ function updateAudioPreview(inputId, wrapId, audioId) {
   }
 }
 
-document.querySelectorAll('.drop-zone').forEach(zone => {
+// Batch drop zones accept several files and run their own handlers below.
+document.querySelectorAll('.drop-zone:not(.batch-drop)').forEach(zone => {
   const input = zone.querySelector('input[type="file"]');
   if (!input) return;
 
@@ -1233,6 +1350,212 @@ document.getElementById('audio').addEventListener('change', () => {
 });
 document.getElementById('outro').addEventListener('change', () => {
   updateAudioPreview('outro', 'prev-wrap-outro', 'audio-preview-outro');
+});
+
+// ── Batch queue ────────────────────────────────────────────────────────────
+const batchAudioInput  = document.getElementById('batch_audio');
+const batchLyricsInput = document.getElementById('batch_lyrics');
+const batchBgInput     = document.getElementById('batch_background');
+const batchReview      = document.getElementById('batchReview');
+const batchStatus      = document.getElementById('batchStatus');
+const btnBatch         = document.getElementById('btnBatch');
+
+// Filename without its extension, keeping the original case for the job title.
+function batchFileTitle(name) {
+  const base = String(name || '').split(/[\\/]/).pop();
+  const dot = base.lastIndexOf('.');
+  return (dot > 0 ? base.slice(0, dot) : base).trim();
+}
+
+function batchStem(name) {
+  return batchFileTitle(name).toLowerCase();
+}
+
+// Mirrors the server rule: pair on the case-insensitive filename stem, and block
+// the whole batch as soon as a song is missing lyrics or matches more than one file.
+function pairBatchFiles(audios, lyricsFiles) {
+  const byStem = new Map();
+  for (const file of lyricsFiles) {
+    const stem = batchStem(file.name);
+    if (!byStem.has(stem)) byStem.set(stem, []);
+    byStem.get(stem).push(file);
+  }
+
+  const pairs = [];
+  const problems = [];
+  const audioStems = new Map();
+
+  for (const audio of audios) {
+    const stem = batchStem(audio.name);
+    if (!audioStems.has(stem)) audioStems.set(stem, []);
+    audioStems.get(stem).push(audio.name);
+
+    const matches = byStem.get(stem) || [];
+    if (matches.length === 1) {
+      pairs.push({ audio, lyrics: matches[0], title: batchFileTitle(audio.name) });
+    } else if (!matches.length) {
+      problems.push(`"${audio.name}" has no lyrics file named "${stem}.txt" or "${stem}.lrc".`);
+    } else {
+      const names = matches.map(f => f.name).join(', ');
+      problems.push(`"${audio.name}" matches more than one lyrics file (${names}); keep one of them.`);
+    }
+  }
+
+  for (const [stem, names] of audioStems) {
+    if (names.length > 1) {
+      problems.push(`${names.length} audio files share the name "${stem}" (${names.join(', ')}); rename them so each song is unique.`);
+    }
+  }
+
+  for (const [stem, files] of byStem) {
+    if (!audioStems.has(stem)) {
+      problems.push(`Lyrics file ${files.map(f => f.name).join(', ')} matches no audio file.`);
+    }
+  }
+
+  return { pairs, problems };
+}
+
+function renderBatchReview() {
+  const audios = Array.from(batchAudioInput.files || []);
+  const lyricsFiles = Array.from(batchLyricsInput.files || []);
+  const { pairs, problems } = pairBatchFiles(audios, lyricsFiles);
+
+  if (!audios.length && !lyricsFiles.length) {
+    batchReview.innerHTML = '';
+    btnBatch.disabled = true;
+    btnBatch.textContent = '📚 Queue batch';
+    // Keep a "queued" or submit-error message, but drop a stale pairing summary.
+    if (batchStatus.dataset.kind !== 'message') {
+      batchStatus.className = 'inline-status';
+      batchStatus.textContent = '';
+    }
+    return;
+  }
+
+  const problemNote = problems.length
+    ? ` · ${problems.length} problem${problems.length === 1 ? '' : 's'}`
+    : '';
+  batchStatus.dataset.kind = 'summary';
+  batchStatus.className = problems.length ? 'inline-status err' : 'inline-status';
+  batchStatus.textContent = audios.length
+    ? `${pairs.length} of ${audios.length} song${audios.length === 1 ? '' : 's'} paired${problemNote}`
+    : `${problems.length} problem${problems.length === 1 ? '' : 's'} with the selected lyrics`;
+
+  const rows = pairs.map(pair => `
+    <tr>
+      <td>${escapeHtml(pair.audio.name)}</td>
+      <td>${escapeHtml(pair.lyrics.name)}</td>
+      <td>${escapeHtml(pair.title)}</td>
+    </tr>`).join('');
+
+  batchReview.innerHTML = `
+    ${rows ? `<table class="batch-table">
+      <thead><tr><th>Audio</th><th>Lyrics</th><th>Job title</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>` : ''}
+    ${problems.length ? `<ul class="batch-problems">${problems.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>` : ''}`;
+
+  btnBatch.disabled = !pairs.length || problems.length > 0;
+  btnBatch.textContent = btnBatch.disabled
+    ? (problems.length ? '⚠ Fix the pairings to queue' : '📚 Queue batch')
+    : `📚 Queue ${pairs.length} song${pairs.length === 1 ? '' : 's'}`;
+}
+
+[batchAudioInput, batchLyricsInput, batchBgInput].forEach(input => {
+  input.addEventListener('change', () => {
+    const zone = input.closest('.batch-drop');
+    const fnEl = zone ? zone.querySelector('.dz-filename') : null;
+    const files = Array.from(input.files || []);
+    if (zone) zone.classList.toggle('filled', files.length > 0);
+    if (fnEl) {
+      fnEl.textContent = files.length > 1 ? `${files.length} files selected` : (files[0] ? files[0].name : '');
+    }
+    if (input === batchBgInput) return; // background does not affect pairing
+    renderBatchReview();
+  });
+});
+
+document.querySelectorAll('.batch-drop').forEach(zone => {
+  const input = zone.querySelector('input[type="file"]');
+  if (!input) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const dropped = Array.from(e.dataTransfer.files || []);
+    if (!dropped.length) return;
+    const dt = new DataTransfer();
+    (input.hasAttribute('multiple') ? dropped : dropped.slice(0, 1)).forEach(f => dt.items.add(f));
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change'));
+  });
+});
+
+btnBatch.addEventListener('click', async () => {
+  const audios = Array.from(batchAudioInput.files || []);
+  const lyricsFiles = Array.from(batchLyricsInput.files || []);
+  const { pairs, problems } = pairBatchFiles(audios, lyricsFiles);
+  if (!pairs.length || problems.length) {
+    batchStatus.className = 'inline-status err';
+    batchStatus.textContent = problems[0] || 'Add audio files first.';
+    return;
+  }
+
+  const fd = new FormData();
+  pairs.forEach(pair => fd.append('audios', pair.audio, pair.audio.name));
+  pairs.forEach(pair => fd.append('lyrics_files', pair.lyrics, pair.lyrics.name));
+  if (batchBgInput.files[0]) fd.append('background', batchBgInput.files[0]);
+
+  // Shared render settings are read from the single-song form above.
+  ['artist', 'font_name', 'font_size', 'bg_color', 'stem_engine', 'language',
+   'word_highlight', 'active_color', 'upcoming_color', 'sung_color',
+   'lyric_style', 'outro_text'].forEach(name => {
+    const el = form.elements[name];
+    if (!el) return;
+    if (el.type === 'checkbox') fd.append(name, el.checked ? 'true' : 'false');
+    else fd.append(name, el.value);
+  });
+
+  btnBatch.disabled = true;
+  batchStatus.dataset.kind = 'message';
+  batchStatus.className = 'inline-status';
+  batchStatus.textContent = `Queueing ${pairs.length} song${pairs.length === 1 ? '' : 's'}…`;
+
+  try {
+    const res = await fetch('/api/process/batch', { method: 'POST', body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) {
+      const list = Array.isArray(data.problems) && data.problems.length
+        ? data.problems
+        : [data.error || 'Batch rejected.'];
+      throw new Error(list.join(' '));
+    }
+
+    const message = `✓ Queued ${data.queued} song${data.queued === 1 ? '' : 's'}. Rendering starts automatically.`;
+
+    [batchAudioInput, batchLyricsInput, batchBgInput].forEach(input => { input.value = ''; });
+    document.querySelectorAll('.batch-drop').forEach(zone => {
+      zone.classList.remove('filled');
+      const fnEl = zone.querySelector('.dz-filename');
+      if (fnEl) fnEl.textContent = '';
+    });
+
+    jobsLoaded = false;
+    await refreshJobs();
+    showJobs();
+
+    renderBatchReview();
+    batchStatus.dataset.kind = 'message';
+    batchStatus.className = 'inline-status ok';
+    batchStatus.textContent = message;
+  } catch (err) {
+    renderBatchReview();
+    batchStatus.dataset.kind = 'message';
+    batchStatus.className = 'inline-status err';
+    batchStatus.textContent = err.message || 'Batch could not be queued.';
+  }
 });
 
 // ── Form submit ────────────────────────────────────────────────────────────
