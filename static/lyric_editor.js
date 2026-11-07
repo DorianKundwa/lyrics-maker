@@ -33,13 +33,24 @@
       return `${m}:${rem}`;
     },
 
-    /** Parse "m:ss.cc" or "ss.cc" back to seconds */
+    /**
+     * Parse "m:ss.cc" or "ss.cc" back to seconds.
+     * Returns null when the text is not a usable time: NaN would become null in
+     * JSON and poison the saved alignment (nothing can render a null start).
+     */
     fromDisplay(str) {
       const t = String(str || '').trim();
+      if (!t) return 0;
       const parts = t.split(':');
-      if (parts.length === 2)
-        return Math.max(0, parseFloat(parts[0]) * 60 + parseFloat(parts[1]));
-      return Math.max(0, parseFloat(t) || 0);
+      if (parts.length === 2) {
+        const mins = parseFloat(parts[0]);
+        const secs = parseFloat(parts[1]);
+        if (!isFinite(mins) || !isFinite(secs)) return null;
+        return Math.max(0, mins * 60 + secs);
+      }
+      const secs = parseFloat(t);
+      if (!isFinite(secs)) return null;
+      return Math.max(0, secs);
     },
 
     // ── Undo / Redo ──────────────────────────────────────────────────────────
@@ -55,12 +66,18 @@
       this._syncUndoBtns();
     },
 
+    /** Persist like any other edit; LE_Actions loads after this file. */
+    _autoSave() {
+      if (typeof LE_Actions !== 'undefined') LE_Actions.scheduleAutoSave();
+    },
+
     undo() {
       if (!this._undoStack.length) return;
       this._redoStack.push(this._snap());
       this.segments = JSON.parse(this._undoStack.pop());
       this._syncUndoBtns();
       this.notify();
+      this._autoSave();
     },
 
     redo() {
@@ -69,6 +86,7 @@
       this.segments = JSON.parse(this._redoStack.pop());
       this._syncUndoBtns();
       this.notify();
+      this._autoSave();
     },
 
     _syncUndoBtns() {

@@ -86,13 +86,25 @@
     inp.focus();
     if (inp.select) inp.select();
 
+    let cancelled = false;
+
     const commit = () => {
+      if (cancelled) { LE.notify(); return; }   // Escape: restore from the model
       const val = inp.value;
+      let next;
+      if (field === 'start' || field === 'end') {
+        const parsed = LE.fromDisplay(val);
+        if (parsed === null) { LE.notify(); return; }  // unparseable: keep old value
+        next = field === 'start' ? parsed : Math.max(seg.start + 0.05, parsed);
+      } else if (field === 'y_offset') {
+        next = parseInt(val, 10) || 0;
+      } else {
+        next = val;
+      }
+      const prev = field === 'y_offset' ? (seg.y_offset || 0) : seg[field];
+      if (next === prev) { LE.notify(); return; }     // blur without a change
       LE.pushUndo();
-      if      (field === 'start')    seg.start    = Math.max(0, LE.fromDisplay(val));
-      else if (field === 'end')      seg.end      = Math.max(seg.start + 0.05, LE.fromDisplay(val));
-      else if (field === 'y_offset') seg.y_offset = parseInt(val, 10) || 0;
-      else                           seg.text     = val;
+      seg[field] = next;
       LE.notify();
       if (typeof LE_Actions !== 'undefined') LE_Actions.scheduleAutoSave();
     };
@@ -100,7 +112,7 @@
     inp.addEventListener('blur', commit);
     inp.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); inp.blur(); }
-      if (e.key === 'Escape') { LE.notify(); }  // discard
+      if (e.key === 'Escape') { e.preventDefault(); cancelled = true; inp.blur(); }
     });
   }
 
