@@ -198,3 +198,73 @@ def test_gaps_keep_the_previous_word_highlighted():
     durations = [int(value) for value in re.findall(r"\\k(\d+)", line)]
     assert durations == [150, 50]
     assert not re.search(r"\{\\k\d+\}\{\\k", line)
+
+
+# --- Long lines in multi-row styles -----------------------------------------
+
+_LONG_LINE = " ".join(["handsome"] * 18)
+
+
+def _segments(text, nxt="three four"):
+    return [
+        _segment(start=1.0, end=2.0, text=text, words=[]),
+        _segment(start=2.0, end=3.0, text=nxt, words=[]),
+    ]
+
+
+def test_single_position_styles_still_allow_libass_wrapping():
+    ass = generate_ass([_segment()], lyric_style="classic")
+    assert "WrapStyle: 0" in ass
+
+
+def test_multi_row_styles_disable_auto_wrapping():
+    for style in ("two_line", "full_lyrics"):
+        assert "WrapStyle: 2" in generate_ass([_segment()], lyric_style=style)
+
+
+def test_overlong_line_is_fitted_onto_one_row():
+    line = _dialogue(generate_ass(
+        _segments(_LONG_LINE), lyric_style="two_line", font_size=110,
+    ))[0]
+    sizes = [int(value) for value in re.findall(r"{\\fs(\d+)", line)]
+    assert sizes, line
+    assert sizes[0] < int(110 * 0.85)   # the style's own effective size
+    assert "\\N" not in line      # one row, never a wrapped second row
+
+
+def test_short_line_keeps_the_style_font_size():
+    line = _dialogue(generate_ass(
+        [_segment()], lyric_style="two_line", font_size=72,
+    ))[0]
+    assert not re.search(r"{\\fs\d+", line)
+
+
+def test_single_position_style_keeps_its_font_size():
+    line = _dialogue(generate_ass(
+        _segments(_LONG_LINE), lyric_style="classic", font_size=110,
+    ))[0]
+    assert not re.search(r"{\\fs\d+", line)  # wrapping handles it instead
+
+
+def test_fitting_never_shrinks_below_the_floor():
+    huge = " ".join(["extraordinarily"] * 40)
+    line = _dialogue(generate_ass(
+        _segments(huge), lyric_style="two_line", font_size=100,
+    ))[0]
+    size = int(re.search(r"{\\fs(\d+)", line).group(1))
+    assert size == 51   # 60 % of the 85 px effective size
+
+
+def test_long_line_does_not_move_the_two_line_rows():
+    lines = _dialogue(generate_ass(
+        _segments(_LONG_LINE), lyric_style="two_line", font_size=72,
+    ))
+    assert "\\pos(960,470)" in lines[0]   # current row stays put
+    assert "\\pos(960,552)" in lines[1]   # preview row keeps its pitch
+
+
+def test_teleprompter_neighbours_are_fitted_from_their_own_text():
+    lines = _dialogue(generate_ass(
+        _segments("short line", _LONG_LINE), lyric_style="full_lyrics", font_size=72,
+    ))
+    assert any(re.search(r"{\\fs\d+", line) for line in lines)

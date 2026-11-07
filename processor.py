@@ -13,6 +13,7 @@ import json
 import math
 import mimetypes
 import textwrap
+from functools import lru_cache
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 
@@ -479,6 +480,78 @@ def _shift_position_tags(dialogue: str, dx: int, dy: int) -> str:
     )
 
 
+# --- Line fitting ----------------------------------------------------------
+
+# ASS plays at 1920x1080, so a lyric wider than that is measured here and drawn
+# at a smaller size instead of being left to libass. An auto-wrapped long line
+# puts a second row on top of the neighbouring lyric in the multi-row styles,
+# which reads as two lines printed over each other.
+_ASS_WIDTH = 1920
+_FIT_FLOOR = 0.6   # never squeeze a line below 60 % of the chosen size
+
+
+@lru_cache(maxsize=64)
+def _lyric_font_path(font_name: str, bold: bool) -> str:
+    """Font file used to measure lyrics, mirroring the style's font name."""
+    name = (font_name or "Arial").strip().lower()
+    candidates: list[str] = []
+    if name == "edo":
+        candidates.append(str(Path(__file__).parent.resolve() / "edo.ttf"))
+    elif name == "impact":
+        candidates += [
+            "C:/Windows/Fonts/impact.ttf",
+            "C:/Windows/Fonts/impactbd.ttf",
+            "/Library/Fonts/Impact.ttf",
+            "/usr/share/fonts/truetype/msttcorefonts/Impact.ttf",
+        ]
+    for path in candidates:
+        if Path(path).exists():
+            return path
+    fallback = FONT_BOLD if bold else FONT_REGULAR
+    return fallback if Path(fallback).exists() else ""
+
+
+@lru_cache(maxsize=128)
+def _measure_font(font_path: str, size: int):
+    try:
+        return ImageFont.truetype(font_path, size) if font_path else None
+    except Exception:
+        return None
+
+
+def _text_width(text: str, font_path: str, size: int, letter_spacing: int = 2) -> float:
+    """Rendered width in ASS pixels, including the style's letter tracking."""
+    width = 0.0
+    font = _measure_font(font_path, size)
+    if font is not None:
+        try:
+            width = float(font.getlength(text))
+        except Exception:
+            width = 0.0
+    if not width:  # unknown font: fall back to bold-Arial metrics
+        width = len(text) * size * 0.6
+    return width + letter_spacing * len(text)
+
+
+def _fit_font_size(
+    text: str,
+    size: int,
+    font_name: str,
+    bold: bool,
+    max_width: float,
+    letter_spacing: int = 2,
+) -> int:
+    """Largest size at most `size` that keeps `text` on one row inside `max_width`."""
+    text = (text or "").strip()
+    if not text or max_width <= 0:
+        return size
+    width = _text_width(text, _lyric_font_path(font_name, bold), size, letter_spacing)
+    if width <= max_width:
+        return size
+    scale = max(_FIT_FLOOR, (max_width / width) * 0.985)
+    return max(10, int(size * scale))
+
+
 def generate_ass(
     timed_lyrics: list[dict],
     title: str = "",
@@ -502,12 +575,31 @@ def generate_ass(
     back_col    = sc["back_colour"]
     # Line spacing for multi-line styles (based on effective font size)
     spacing     = max(70, int(eff_size * 1.35))
+    # Auto-wrapping is only unsafe where rows share the screen: there a
+    # wrapped line lands on its neighbour, so those styles get one fitted
+    # row instead. Single-position styles keep wrapping at full size.
+    multi_row   = bool(sc.get("multi_line"))
+    # Widest one-row line this style can draw, allowing for outline and shadow.
+    safe_width  = max(
+        200.0,
+        _ASS_WIDTH - sc["margin_l"] - sc["margin_r"]
+        - 2 * max(0, sc["outline"]) - max(0, sc["shadow"]) - 24,
+    )
 
+    def fit_tag(text: str) -> str:
+        """Per-line font-size override for text wider than the frame."""
+        if not multi_row:
+            return ""
+        fitted = _fit_font_size(text, eff_size, font_name, bool(sc["bold"]), safe_width)
+        return f"{{\\fs{fitted}}}" if fitted != eff_size else ""
+
+    # Rows are placed explicitly below, so libass must not wrap a long line
+    # onto the next lyric row; fitting keeps every line on a single row.
     header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: 1920
 PlayResY: 1080
-WrapStyle: 0
+WrapStyle: {2 if multi_row else 0}
 ScaledBorderAndShadow: yes
 
 [V4+ Styles]
@@ -567,6 +659,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             text_body = karaoke_text.strip()
         else:
             text_body = _ass_escape(item.get("text", ""))
+
+        # Fit this line once; karaoke and plain bodies show the same words.
+        display_text = " ".join(unit["text"] for unit in units) if units else item.get("text", "")
+        line_fit = fit_tag(display_text)
 
         # ── Per-style intro + outro tags ───────────────────────────────────────
         is_first = (i == 0)
@@ -632,7 +728,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             prefix = sc.get("tags") or r"\fad(150,300)"
 
 
-        line_text = f"{{{prefix}}}{text_body}"
+        line_text = f"{{{prefix}}}{line_fit}{text_body}"
 
         # ── Emit dialogue line(s) ─────────────────────────────────────────
         if sc["neon"]:
@@ -649,14 +745,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             glow = (
                 f"{{\\blur14\\1c{neon_glow_col}"
                 f"\\t(0,800,\\blur24)\\t(800,1600,\\blur16)"
-                f"{fad_tag}}}{plain}"
+                f"{fad_tag}}}{line_fit}{plain}"
             )
             lines.append(
                 f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                 f"Default,,0,0,0,,{glow}"
             )
             # Layer 1 — sharp karaoke text: word highlighting + fade
-            sharp = f"{{\\blur0{fad_tag}}}{text_body}"
+            sharp = f"{{\\blur0{fad_tag}}}{line_fit}{text_body}"
             lines.append(
                 f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
                 f"Default,,0,0,0,,{sharp}"
@@ -673,35 +769,37 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 t_cur = rf"\pos(960,{cur_y})\fad(300,0)"
                 lines.append(
                     f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-                    f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
+                    f"Default,,0,0,0,,{{{t_cur}}}{line_fit}{text_body}"
                 )
                 if 1 < len(items):
                     nxt   = _ass_escape(items[1]["text"])
+                    next_fit = fit_tag(items[1]["text"])
                     t_nxt = rf"\pos(960,{cur_y + spacing})\fad(300,0)\1c{second_col}\alpha&H55&"
                     lines.append(
                         f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-                        f"Default,,0,0,0,,{{{t_nxt}}}{nxt}"
+                        f"Default,,0,0,0,,{{{t_nxt}}}{next_fit}{nxt}"
                     )
             elif is_last:
                 # Last line: slides up into position, then fades out gracefully
                 t_cur = rf"\move(960,{cur_y + spacing},960,{cur_y},0,{tr_ms})\alpha&H55&\t(0,{tr_ms},\alpha&H00&)\fad(0,450)"
                 lines.append(
                     f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-                    f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
+                    f"Default,,0,0,0,,{{{t_cur}}}{line_fit}{text_body}"
                 )
             else:
                 # Middle lines: current slides up and brightens
                 t_cur = rf"\move(960,{cur_y + spacing},960,{cur_y},0,{tr_ms})\alpha&H55&\t(0,{tr_ms},\alpha&H00&)"
                 lines.append(
                     f"Dialogue: 1,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-                    f"Default,,0,0,0,,{{{t_cur}}}{text_body}"
+                    f"Default,,0,0,0,,{{{t_cur}}}{line_fit}{text_body}"
                 )
                 # Next line slides in from below
                 nxt   = _ass_escape(items[i + 1]["text"])
+                next_fit = fit_tag(items[i + 1]["text"])
                 t_nxt = rf"\move(960,{cur_y + 2*spacing},960,{cur_y + spacing},0,{tr_ms})\1c{second_col}\alpha&HBB&\t(0,{tr_ms},\alpha&H55&)"
                 lines.append(
                     f"Dialogue: 0,{seconds_to_ass(start)},{seconds_to_ass(end)},"
-                    f"Default,,0,0,0,,{{{t_nxt}}}{nxt}"
+                    f"Default,,0,0,0,,{{{t_nxt}}}{next_fit}{nxt}"
                 )
 
         elif multi_mode == "full":
@@ -747,9 +845,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                     else:
                         tags = rf"\move(960,{y_from},960,{y_this},0,{tr_ms})\1c{second_col}\alpha&HCC&\t(0,{tr_ms},\alpha&H99&)"
 
+                body_fit = line_fit if role == "cur" else fit_tag(entry["text"])
                 lines.append(
                     f"Dialogue: {layer},{seconds_to_ass(start)},{seconds_to_ass(end)},"
-                    f"Default,,0,0,0,,{{{tags}}}{body}"
+                    f"Default,,0,0,0,,{{{tags}}}{body_fit}{body}"
                 )
 
         else:
@@ -909,6 +1008,24 @@ _VIDEO_ENCODE = [
 ]
 
 
+def _render_threads() -> int:
+    """Threads per FFmpeg encode, budgeted across the concurrently running songs.
+
+    Three jobs encoding 1080p with the default thread count fight over the same
+    cores and end up slower than one at a time, so the budget is divided.
+    """
+    try:
+        jobs = max(1, int(os.environ.get("LYRIC_JOB_CONCURRENCY", "3")))
+    except ValueError:
+        jobs = 3
+    return max(1, (os.cpu_count() or 4) // jobs)
+
+
+def _video_encode_args() -> list[str]:
+    """Encode flags plus the per-encode thread cap."""
+    return [*_VIDEO_ENCODE, "-threads", str(_render_threads())]
+
+
 def _build_audio(work_dir: Path, main_audio: Path, outro_audio: Path | None) -> Path:
     if outro_audio:
         combined = work_dir / "_combined.m4a"
@@ -948,7 +1065,7 @@ def generate_instrumental_video(
         "-i", str(audio),
         "-vf", vf,
         "-shortest",
-    ] + _VIDEO_ENCODE + [str(output_path)]
+    ] + _video_encode_args() + [str(output_path)]
     result = subprocess.run(cmd, capture_output=True)
     if result.returncode != 0:
         raise subprocess.CalledProcessError(
@@ -1105,7 +1222,7 @@ def generate_lyrics_video(
         "-i", str(audio),
         "-vf", vf,
         "-shortest",
-    ] + _VIDEO_ENCODE + [str(output_path)]
+    ] + _video_encode_args() + [str(output_path)]
     subprocess.run(cmd, check=True, capture_output=True)
 
     # Returned so the editor can keep word-level timings instead of re-reading
@@ -1226,6 +1343,6 @@ def rerender_lyrics_video(
         "-i", str(audio_path),
         "-vf", vf,
         "-shortest",
-    ] + _VIDEO_ENCODE + [str(output_path)]
+    ] + _video_encode_args() + [str(output_path)]
 
     subprocess.run(cmd, check=True, capture_output=True)
