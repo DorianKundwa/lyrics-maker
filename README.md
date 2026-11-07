@@ -207,6 +207,12 @@ to the combo repair pass; plain MMS_FA forced alignment ignores it.
 |---|---|---|
 | `LYRIC_ALIGN_ENGINE` | `whisperx` | `whisperx` (default), `combo` (forced + repair), `forced`, or `auto` |
 | `LYRIC_WHISPER_MODEL` | `small` | faster-whisper model used by the combo repair pass |
+| `LYRIC_HEAVY_CONCURRENCY` | `1` | How many Demucs separations / lyric alignments may run at once, process-wide |
+
+Two jobs may be queued and rendered at the same time, but stem separation and
+model-based alignment share the `LYRIC_HEAVY_CONCURRENCY` slot, so the two
+memory-heavy stages never run together. Raise it only on a machine with the VRAM
+to hold two sets of model weights (roughly 4 GB per job on GPU).
 
 The benchmark below was measured before WhisperX became the default. Forced
 alignment and combo still score higher on that five-track set, so

@@ -12,6 +12,7 @@ import zipfile
 from pathlib import Path
 from typing import Optional
 
+from concurrency import run_heavy
 from fastapi import BackgroundTasks, FastAPI, File, Form, UploadFile, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -319,6 +320,22 @@ def _get_semaphore() -> asyncio.Semaphore:
     return _semaphore
 
 
+# Strong references to the running job tasks, so they are not garbage
+# collected while the semaphore still has them queued.
+_job_tasks: set[asyncio.Task] = set()
+
+
+def _schedule_job(job_id: str, **params) -> None:
+    """Run a queued job as its own task, letting the semaphore do the scheduling.
+
+    Starlette awaits BackgroundTasks one after another, so a batch queued that
+    way would run song by song and never use the second job slot.
+    """
+    task = asyncio.create_task(_run_job(job_id, **params))
+    _job_tasks.add(task)
+    task.add_done_callback(_job_tasks.discard)
+
+
 def _cleanup_old_outputs():
     now = time.time()
     changed = False
@@ -389,43 +406,46 @@ def _cleanup_old_alignments() -> None:
             pass
 
 
-@app.post("/api/process")
-async def start_process(
-    background_tasks: BackgroundTasks,
-    audio:       UploadFile = File(...),
-    background:  Optional[UploadFile] = File(None),
-    lyrics:      Optional[UploadFile] = File(None),
-    lyrics_text: Optional[str] = Form(None),
-    outro:       Optional[UploadFile] = File(None),
-    outro_text:  str = Form("Thanks for watching!"),
-    title:       str = Form(""),
-    artist:      str = Form(""),
-    font_name:   str = Form("Arial"),
-    font_size:   int = Form(72),
-    bg_color:    str = Form("#000000"),
-    stem_engine: str = Form("demucs"),
-    word_highlight: bool = Form(True),
-    language:    str = Form("en"),
-    active_color:   str = Form("#FFFFFF"),
-    upcoming_color: str = Form("#FF0000"),
-    sung_color:     str = Form("#FFFFFF"),
-    lyric_style:    str = Form("classic"),
-):
-    # Unique per submission, so two jobs for the same song never share folders
-    # or status entries.
+def _new_job_id(artist: str, title: str) -> str:
+    """Unique per submission, so two jobs for the same song never share folders."""
     suffix = uuid.uuid4().hex[:8]
     if artist and title:
-        job_id = f"{_safe(artist, 'artist')}_{_safe(title, 'song')}_{suffix}"
-    elif artist or title:
-        job_id = f"{_safe(artist or title, 'job')}_{suffix}"
-    else:
-        job_id = str(uuid.uuid4())
+        return f"{_safe(artist, 'artist')}_{_safe(title, 'song')}_{suffix}"
+    if artist or title:
+        return f"{_safe(artist or title, 'job')}_{suffix}"
+    return str(uuid.uuid4())
 
-    _cleanup_old_outputs()
-    _cleanup_old_alignments()
+
+async def _store_job(
+    *,
+    audio: UploadFile,
+    background: Optional[UploadFile],
+    lyrics: Optional[UploadFile],
+    lyrics_text: Optional[str],
+    outro: Optional[UploadFile],
+    outro_text: str,
+    title: str,
+    artist: str,
+    font_name: str,
+    font_size: int,
+    bg_color: str,
+    stem_engine: str,
+    word_highlight: bool,
+    language: str,
+    active_color: str,
+    upcoming_color: str,
+    sung_color: str,
+    lyric_style: str,
+) -> tuple[str, dict]:
+    """Save one song's uploads and record its queued job.
+
+    Returns ``(job_id, params)``. Raises ValueError (bad or oversized upload) or
+    OSError (disk) after removing both the upload and output folders, so a
+    rejected submission leaves no half-made job behind.
+    """
+    job_id = _new_job_id(artist, title)
     job_dir = UPLOAD_DIR / job_id
     out_dir = OUTPUT_DIR / job_id
-    
     job_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -440,11 +460,11 @@ async def start_process(
             from PIL import Image
             img = Image.new("RGB", (1920, 1080), bg_color)
             img.save(bg_path, "JPEG")
-            
+
         outro_path  = None
         if outro and outro.filename:
             outro_path = await _save(outro, job_dir / _safe(outro.filename, "outro"))
-            
+
         if lyrics and lyrics.filename:
             lyrics_path = await _save(lyrics, job_dir / _safe(lyrics.filename, "lyrics.txt"))
         elif lyrics_text and lyrics_text.strip():
@@ -453,10 +473,11 @@ async def start_process(
                 f.write(lyrics_text)
         else:
             raise ValueError("Lyrics file or text must be provided.")
-            
-    except ValueError as e:
+
+    except (ValueError, OSError):
         shutil.rmtree(job_dir, ignore_errors=True)
-        return JSONResponse({"error": str(e)}, status_code=400)
+        shutil.rmtree(out_dir, ignore_errors=True)
+        raise
 
     now = time.time()
     params = {
@@ -493,8 +514,202 @@ async def start_process(
         "params": params,
     }
     _persist_jobs()
+    return job_id, params
+
+
+def _batch_stem(name: str) -> str:
+    """Filename stem used to pair a batch's audio with its lyrics."""
+    return Path(name or "").stem.strip().lower()
+
+
+def pair_batch_files(
+    audios: list[UploadFile], lyrics_files: list[UploadFile]
+) -> tuple[list[tuple[UploadFile, UploadFile]], list[str]]:
+    """Pair each audio upload with the lyrics file that shares its filename stem.
+
+    Returns ``(pairs, problems)``. Matching is case-insensitive: ``Song.mp3``
+    pairs with ``song.txt``. Any problem means the whole batch must be rejected
+    before a job is queued, so a song never silently renders another song's
+    lyrics.
+    """
+    by_stem: dict[str, list[UploadFile]] = {}
+    for lyrics in lyrics_files or []:
+        if lyrics and lyrics.filename:
+            by_stem.setdefault(_batch_stem(lyrics.filename), []).append(lyrics)
+
+    pairs: list[tuple[UploadFile, UploadFile]] = []
+    problems: list[str] = []
+    audio_stems: dict[str, list[str]] = {}
+    for audio in audios or []:
+        if not audio or not audio.filename:
+            continue
+        stem = _batch_stem(audio.filename)
+        audio_stems.setdefault(stem, []).append(audio.filename)
+        matches = by_stem.get(stem, [])
+        if len(matches) == 1:
+            pairs.append((audio, matches[0]))
+        elif not matches:
+            problems.append(
+                f'"{audio.filename}" has no lyrics file named "{stem}.txt" or "{stem}.lrc".'
+            )
+        else:
+            names = ", ".join(sorted(m.filename for m in matches))
+            problems.append(
+                f'"{audio.filename}" matches more than one lyrics file ({names}); keep one of them.'
+            )
+
+    for stem, names in audio_stems.items():
+        if len(names) > 1:
+            problems.append(
+                f'{len(names)} audio files share the name "{stem}" '
+                f'({", ".join(names)}); rename them so each song is unique.'
+            )
+
+    for stem, files in by_stem.items():
+        if stem not in audio_stems:
+            names = ", ".join(sorted(f.filename for f in files))
+            problems.append(f"Lyrics file {names} matches no audio file.")
+
+    return pairs, problems
+
+
+@app.post("/api/process")
+async def start_process(
+    background_tasks: BackgroundTasks,
+    audio:       UploadFile = File(...),
+    background:  Optional[UploadFile] = File(None),
+    lyrics:      Optional[UploadFile] = File(None),
+    lyrics_text: Optional[str] = Form(None),
+    outro:       Optional[UploadFile] = File(None),
+    outro_text:  str = Form("Thanks for watching!"),
+    title:       str = Form(""),
+    artist:      str = Form(""),
+    font_name:   str = Form("Arial"),
+    font_size:   int = Form(72),
+    bg_color:    str = Form("#000000"),
+    stem_engine: str = Form("demucs"),
+    word_highlight: bool = Form(True),
+    language:    str = Form("en"),
+    active_color:   str = Form("#FFFFFF"),
+    upcoming_color: str = Form("#FF0000"),
+    sung_color:     str = Form("#FFFFFF"),
+    lyric_style:    str = Form("classic"),
+):
+    _cleanup_old_outputs()
+    _cleanup_old_alignments()
+    try:
+        job_id, params = await _store_job(
+            audio=audio,
+            background=background,
+            lyrics=lyrics,
+            lyrics_text=lyrics_text,
+            outro=outro,
+            outro_text=outro_text,
+            title=title,
+            artist=artist,
+            font_name=font_name,
+            font_size=font_size,
+            bg_color=bg_color,
+            stem_engine=stem_engine,
+            word_highlight=word_highlight,
+            language=language,
+            active_color=active_color,
+            upcoming_color=upcoming_color,
+            sung_color=sung_color,
+            lyric_style=lyric_style,
+        )
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
     background_tasks.add_task(_run_job, job_id, **params)
     return {"job_id": job_id}
+
+
+@app.post("/api/process/batch")
+async def start_batch(
+    audios: list[UploadFile] = File(...),
+    lyrics_files: Optional[list[UploadFile]] = File(None),
+    background: Optional[UploadFile] = File(None),
+    bg_color: str = Form("#000000"),
+    font_name: str = Form("Arial"),
+    font_size: int = Form(72),
+    stem_engine: str = Form("demucs"),
+    word_highlight: bool = Form(True),
+    language: str = Form("en"),
+    active_color: str = Form("#FFFFFF"),
+    upcoming_color: str = Form("#FF0000"),
+    sung_color: str = Form("#FFFFFF"),
+    lyric_style: str = Form("classic"),
+    outro_text: str = Form("Thanks for watching!"),
+    artist: str = Form(""),
+):
+    """Queue one ordinary job per audio file, paired with its same-named lyrics.
+
+    Every pair is validated before anything is queued: a missing or ambiguous
+    match rejects the whole batch with the reasons, so a song never renders with
+    another song's lyrics. Each accepted pair becomes a normal job with its own
+    folders, history card and resume support.
+    """
+    audios = [a for a in audios if a and a.filename]
+    if not audios:
+        return JSONResponse({"error": "No audio files were uploaded."}, status_code=400)
+
+    pairs, problems = pair_batch_files(audios, lyrics_files or [])
+    if problems:
+        return JSONResponse(
+            {"error": "Nothing was queued. " + " ".join(problems), "problems": problems},
+            status_code=400,
+        )
+
+    _cleanup_old_outputs()
+    _cleanup_old_alignments()
+
+    created: list[tuple[str, dict]] = []
+    try:
+        for audio, lyrics in pairs:
+            if background and background.filename:
+                # One shared upload feeds every job, so rewind it each time.
+                await background.seek(0)
+            created.append(
+                await _store_job(
+                    audio=audio,
+                    background=background,
+                    lyrics=lyrics,
+                    lyrics_text=None,
+                    outro=None,
+                    outro_text=outro_text,
+                    title=Path(audio.filename).stem,
+                    artist=artist,
+                    font_name=font_name,
+                    font_size=font_size,
+                    bg_color=bg_color,
+                    stem_engine=stem_engine,
+                    word_highlight=word_highlight,
+                    language=language,
+                    active_color=active_color,
+                    upcoming_color=upcoming_color,
+                    sung_color=sung_color,
+                    lyric_style=lyric_style,
+                )
+            )
+    except (ValueError, OSError) as exc:
+        for job_id, _params in created:
+            _jobs.pop(job_id, None)
+            shutil.rmtree(UPLOAD_DIR / job_id, ignore_errors=True)
+            shutil.rmtree(OUTPUT_DIR / job_id, ignore_errors=True)
+        _persist_jobs()
+        return JSONResponse(
+            {"error": f"Batch rejected: {exc}", "problems": [str(exc)]},
+            status_code=400,
+        )
+
+    for job_id, params in created:
+        _schedule_job(job_id, **params)
+
+    return {
+        "queued": len(created),
+        "jobs": [{"job_id": job_id, "title": params["title"]} for job_id, params in created],
+    }
 
 
 # ─── Job Runner ──────────────────────────────────────────────────────────────
@@ -600,7 +815,9 @@ async def _run_job(
             if vocals_path is None:
                 _set(job_id, step="Separating stems (this may take a few minutes)…", progress=15)
                 from stem_separator import separate_audio
-                vocals_path, inst_audio_path = await run(
+                # Demucs shares the heavy-stage slot with lyric alignment, so two
+                # jobs never hold two sets of model weights at the same time.
+                vocals_path, inst_audio_path = await run_heavy(
                     separate_audio, audio_path, stem_engine, str(out_dir), stem_warnings
                 )
                 job["stem_paths"] = {
