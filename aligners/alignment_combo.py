@@ -26,6 +26,7 @@ import json
 import math
 import os
 import subprocess
+import threading
 from pathlib import Path
 from typing import Callable, List, Optional
 
@@ -44,6 +45,9 @@ MAX_WINDOW_SEC = 15.0
 MIN_MATCH_RATIO = 0.6   # share of the line's words the transcript must confirm
 
 _WHISPER_MODEL = None
+# Concurrent jobs share this module-level cache, so the first load must not run
+# twice: two Whisper instances would double the memory and race on the download.
+_WHISPER_MODEL_LOCK = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -257,18 +261,22 @@ def _whisper_model():
     """Load faster-whisper once per process (downloads on first use)."""
     global _WHISPER_MODEL
     if _WHISPER_MODEL is None:
-        from faster_whisper import WhisperModel
+        with _WHISPER_MODEL_LOCK:
+            if _WHISPER_MODEL is None:
+                from faster_whisper import WhisperModel
 
-        size = os.environ.get("LYRIC_WHISPER_MODEL", "small")
-        device, compute_type = "cpu", "int8"
-        try:
-            import torch
+                size = os.environ.get("LYRIC_WHISPER_MODEL", "small")
+                device, compute_type = "cpu", "int8"
+                try:
+                    import torch
 
-            if torch.cuda.is_available():
-                device, compute_type = "cuda", "float16"
-        except Exception:
-            pass
-        _WHISPER_MODEL = WhisperModel(size, device=device, compute_type=compute_type)
+                    if torch.cuda.is_available():
+                        device, compute_type = "cuda", "float16"
+                except Exception:
+                    pass
+                _WHISPER_MODEL = WhisperModel(
+                    size, device=device, compute_type=compute_type
+                )
     return _WHISPER_MODEL
 
 

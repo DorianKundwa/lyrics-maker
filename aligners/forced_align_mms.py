@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import threading
 import unicodedata
 from pathlib import Path
 from typing import List, Optional, Sequence
@@ -65,28 +66,37 @@ def read_lyric_lines(lyrics_path: str | Path) -> List[str]:
 
 _BUNDLE = None
 _MODEL = None
+# Jobs run in parallel worker threads, so the cold-start load must be guarded:
+# two threads entering the None check together would download and instantiate the
+# ~1.2 GB checkpoint twice. Reentrant because _model() loads through _bundle().
+_INIT_LOCK = threading.RLock()
 
 
 def _bundle():
     """Load MMS_FA once per process (~1.2 GB checkpoint on first use)."""
     global _BUNDLE
     if _BUNDLE is None:
-        import torchaudio
+        with _INIT_LOCK:
+            if _BUNDLE is None:
+                import torchaudio
 
-        if not hasattr(torchaudio.functional, "forced_align"):
-            raise RuntimeError(
-                "torchaudio.functional.forced_align is unavailable (removed in 2.9); "
-                "pin torchaudio 2.6-2.8 or use the WhisperX path"
-            )
-        _BUNDLE = torchaudio.pipelines.MMS_FA
+                if not hasattr(torchaudio.functional, "forced_align"):
+                    raise RuntimeError(
+                        "torchaudio.functional.forced_align is unavailable (removed in 2.9); "
+                        "pin torchaudio 2.6-2.8 or use the WhisperX path"
+                    )
+                _BUNDLE = torchaudio.pipelines.MMS_FA
     return _BUNDLE
 
 
 def _model():
     global _MODEL
     if _MODEL is None:
-        _MODEL = _bundle().get_model()
-        _MODEL.eval()
+        with _INIT_LOCK:
+            if _MODEL is None:
+                model = _bundle().get_model()
+                model.eval()
+                _MODEL = model
     return _MODEL
 
 

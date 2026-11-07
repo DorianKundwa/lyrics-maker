@@ -1,6 +1,14 @@
 import os
 import traceback
 
+# Model-based alignment is memory hungry (WhisperX and MMS_FA both hold weights),
+# so every engine in the cascade runs behind the app-wide heavy stage gate. A
+# standalone use of this package outside the app root falls back to no gate.
+try:
+    from concurrency import heavy_stage
+except Exception:  # pragma: no cover - package used outside the app root
+    from contextlib import nullcontext as heavy_stage
+
 # WhisperX is the default: its word times come from the transcript, so a track
 # that opens slowly and then switches to fast rap does not drag every later
 # lyric line out of sync the way a monotonic CTC alignment can. Forced
@@ -49,7 +57,15 @@ def align(audio_path: str, lyrics_path: str, output_json: str = None, language: 
     Tries the engines in the order selected by LYRIC_ALIGN_ENGINE
     (default: WhisperX -> combo -> forced), then Aeneas and finally the
     heuristic fallback. Returns the path to the generated JSON file.
+
+    The whole cascade holds the shared heavy-stage slot, so two jobs never load
+    or run ML models at the same time.
     """
+    with heavy_stage():
+        return _align_cascade(audio_path, lyrics_path, output_json, language)
+
+
+def _align_cascade(audio_path: str, lyrics_path: str, output_json: str = None, language: str = None) -> str:
     if output_json is None:
         from .config import ALIGN_DIR
         base = os.path.splitext(os.path.basename(audio_path))[0]

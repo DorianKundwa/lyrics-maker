@@ -997,8 +997,14 @@ def generate_lyrics_video(
                 "\n".join(txt for _, txt in parsed),
                 encoding="utf-8",
             )
+            # Keep the timing JSON inside this job's own output folder: the
+            # default name is derived from the audio basename, so two jobs with
+            # the same song title would otherwise share (and overwrite) it.
             align_json = align(
-                str(vocals_path), str(cleaned_lyrics_path), language=language or None
+                str(vocals_path),
+                str(cleaned_lyrics_path),
+                output_json=str(work_dir / "_alignment.json"),
+                language=language or None,
             )
             timed_raw = parse_alignment_json(align_json)
             timed = []
