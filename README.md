@@ -207,12 +207,20 @@ to the combo repair pass; plain MMS_FA forced alignment ignores it.
 |---|---|---|
 | `LYRIC_ALIGN_ENGINE` | `whisperx` | `whisperx` (default), `combo` (forced + repair), `forced`, or `auto` |
 | `LYRIC_WHISPER_MODEL` | `small` | faster-whisper model used by the combo repair pass |
-| `LYRIC_HEAVY_CONCURRENCY` | `1` | How many Demucs separations / lyric alignments may run at once, process-wide |
+| `LYRIC_JOB_CONCURRENCY` | `3` | How many songs may render at once (1–4). Each song holds a slot for its whole pipeline |
+| `LYRIC_STEM_CONCURRENCY` | `1` | How many Demucs stem separations may run at once, process-wide |
+| `LYRIC_ALIGN_CONCURRENCY` | `1` | How many model-based lyric alignments may run at once, process-wide |
 
-Two jobs may be queued and rendered at the same time, but stem separation and
-model-based alignment share the `LYRIC_HEAVY_CONCURRENCY` slot, so the two
-memory-heavy stages never run together. Raise it only on a machine with the VRAM
-to hold two sets of model weights (roughly 4 GB per job on GPU).
+Stem separation and lyric alignment have independent slots, so with the default
+`LYRIC_JOB_CONCURRENCY=3` up to three songs are in progress at any moment and one
+can be aligning while another separates stems. The two ML slots stay at `1`
+because each holds a set of model weights (roughly 4 GB per job on GPU); raise
+them only on a machine with the VRAM or RAM to hold two or three sets, and expect
+Demucs to get slower per song when the CPU is shared.
+
+`LYRIC_HEAVY_CONCURRENCY` is still accepted as an alias for the stem slot, so
+existing environments keep working. FFmpeg's encoder threads are divided by
+`LYRIC_JOB_CONCURRENCY` so three concurrent renders do not fight over the cores.
 
 The benchmark below was measured before WhisperX became the default. Forced
 alignment and combo still score higher on that five-track set, so

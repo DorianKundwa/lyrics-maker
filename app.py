@@ -4,6 +4,8 @@ Lyrics Video Maker — FastAPI Backend
 
 import asyncio
 import json
+import math
+import os
 import shutil
 import uuid
 import re
@@ -11,8 +13,11 @@ import time
 import zipfile
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
-from concurrency import run_heavy
+from starlette.background import BackgroundTask
+
+from concurrency import run_stem
 from fastapi import BackgroundTasks, FastAPI, File, Form, UploadFile, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -36,6 +41,24 @@ for d in (UPLOAD_DIR, OUTPUT_DIR, STATIC_DIR):
 
 app = FastAPI(title="Lyrics Video Maker", version="1.0.0")
 
+
+@app.middleware("http")
+async def _reject_cross_site_writes(request: Request, call_next):
+    """Block cross-site browser writes (CSRF).
+
+    The server has no login by design, so without this any web page open in the
+    browser could POST a multipart form here and queue renders. Requests with no
+    Origin header (curl, scripts, the test client) are unaffected.
+    """
+    if request.method not in ("GET", "HEAD", "OPTIONS"):
+        origin = request.headers.get("origin")
+        if origin and urlparse(origin).netloc != request.headers.get("host", ""):
+            return JSONResponse(
+                {"error": "Cross-origin request blocked."}, status_code=403
+            )
+    return await call_next(request)
+
+
 # In-memory job store  {job_id: {...}}
 _jobs: dict[str, dict] = {}
 
@@ -50,6 +73,8 @@ JOBS_STORE = ALIGN_DIR / "_jobs_store.json"
 ALIGNMENT_RETENTION_SECONDS = 7 * 24 * 60 * 60
 # Inputs for failed/interrupted jobs are kept this long so they can be resumed.
 RESUMABLE_RETENTION_SECONDS = 7 * 24 * 60 * 60
+# Finished entries stay in the history panel and the persisted store this long.
+JOB_RECORD_RETENTION_SECONDS = 30 * 24 * 60 * 60
 
 _rerender_jobs: dict[str, dict] = {}
 
@@ -308,6 +333,19 @@ async def _save(upload: UploadFile, dest: Path) -> Path:
     return dest
 
 
+# How many songs may render at the same time. Each song holds one slot for its
+# whole pipeline, so this is also the batch's real parallelism.
+DEFAULT_JOB_SLOTS = 3
+
+
+def _job_concurrency() -> int:
+    """Job slots from LYRIC_JOB_CONCURRENCY (default 3), clamped to 1-4."""
+    try:
+        return max(1, min(4, int(os.environ.get("LYRIC_JOB_CONCURRENCY", str(DEFAULT_JOB_SLOTS)))))
+    except ValueError:
+        return DEFAULT_JOB_SLOTS
+
+
 _semaphore: Optional[asyncio.Semaphore] = None
 
 
@@ -316,8 +354,25 @@ def _get_semaphore() -> asyncio.Semaphore:
     # import time can bind it to the wrong loop on Python 3.9.
     global _semaphore
     if _semaphore is None:
-        _semaphore = asyncio.Semaphore(2)
+        _semaphore = asyncio.Semaphore(_job_concurrency())
     return _semaphore
+
+
+_slot_ids: Optional[asyncio.Queue] = None
+
+
+def _get_slot_ids() -> asyncio.Queue:
+    """Queue of slot numbers 1..N so a running song can name its slot.
+
+    The semaphore decides how many songs run; this only labels which of the
+    visible slots each one occupies, for the concurrent-jobs board.
+    """
+    global _slot_ids
+    if _slot_ids is None:
+        _slot_ids = asyncio.Queue()
+        for slot in range(1, _job_concurrency() + 1):
+            _slot_ids.put_nowait(slot)
+    return _slot_ids
 
 
 # Strong references to the running job tasks, so they are not garbage
@@ -334,6 +389,40 @@ def _schedule_job(job_id: str, **params) -> None:
     task = asyncio.create_task(_run_job(job_id, **params))
     _job_tasks.add(task)
     task.add_done_callback(_job_tasks.discard)
+
+
+def _job_timestamp(job: dict) -> float:
+    """Most recent known timestamp for a job record, 0 when it has none."""
+    for key in ("finished_at", "last_update_at", "queued_at"):
+        value = job.get(key)
+        if value is None:
+            continue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            continue
+    return 0.0
+
+
+def _prune_job_records(now: float) -> bool:
+    """Forget finished jobs past the retention window.
+
+    Output folders are deleted after an hour, but every record used to stay in
+    memory and in alignments/_jobs_store.json forever, so both grew with each
+    song ever rendered.
+    """
+    stale: list[str] = []
+    for jid, job in _jobs.items():
+        if job.get("status") in ("queued", "running") or job.get("resumable"):
+            continue
+        stamped = _job_timestamp(job)
+        # A record with no usable timestamp at all is kept: better a stale entry
+        # in the history panel than deleting a job whose times could not be read.
+        if stamped > 0 and now - stamped > JOB_RECORD_RETENTION_SECONDS:
+            stale.append(jid)
+    for jid in stale:
+        _jobs.pop(jid, None)
+    return bool(stale)
 
 
 def _cleanup_old_outputs():
@@ -363,6 +452,7 @@ def _cleanup_old_outputs():
             if now - d.stat().st_mtime <= 3600:
                 continue
             shutil.rmtree(d, ignore_errors=True)
+    changed = _prune_job_records(now) or changed
     if changed:
         _persist_jobs()
 
@@ -779,6 +869,14 @@ async def _run_job(
         job = _jobs[job_id]
         job.setdefault("attempts", 1)
         job["resumable"] = False
+        slot_ids = _get_slot_ids()
+        try:
+            slot = slot_ids.get_nowait()
+        except asyncio.QueueEmpty:  # slot count changed mid-flight
+            slot = None
+        if slot is not None:
+            job["slot"] = slot
+        job["started_at"] = time.time()
         loop = asyncio.get_running_loop()
 
         def run(fn, *args, **kwargs):
@@ -815,9 +913,9 @@ async def _run_job(
             if vocals_path is None:
                 _set(job_id, step="Separating stems (this may take a few minutes)…", progress=15)
                 from stem_separator import separate_audio
-                # Demucs shares the heavy-stage slot with lyric alignment, so two
-                # jobs never hold two sets of model weights at the same time.
-                vocals_path, inst_audio_path = await run_heavy(
+                # Demucs has its own slot (LYRIC_STEM_CONCURRENCY), separate from
+                # lyric alignment, so two songs can be in different stages at once.
+                vocals_path, inst_audio_path = await run_stem(
                     separate_audio, audio_path, stem_engine, str(out_dir), stem_warnings
                 )
                 job["stem_paths"] = {
@@ -934,6 +1032,9 @@ async def _run_job(
             # Keep uploads for failed/interrupted jobs so Resume can use them.
             if job.get("status") == "complete":
                 shutil.rmtree(UPLOAD_DIR / job_id, ignore_errors=True)
+            if slot is not None:
+                job.pop("slot", None)
+                slot_ids.put_nowait(slot)
             _persist_jobs()
 
 
@@ -944,7 +1045,8 @@ def get_jobs():
     """History view: every job except internal param/cancel bookkeeping.
 
     Public fields are chosen so the UI can build a job-history panel without
-    ever receiving raw input paths or cancel-request state.
+    ever receiving raw input paths or cancel-request state. Also reports the job
+    slot capacity and each waiting job's queue position.
     """
     result: dict[str, dict] = {}
     for jid, job in _jobs.items():
@@ -958,6 +1060,9 @@ def get_jobs():
             "status": job.get("status"),
             "step": job.get("step"),
             "progress": job.get("progress", 0),
+            "slot": job.get("slot"),
+            "started_at": job.get("started_at"),
+            "queued_at": job.get("queued_at") or job.get("created_at"),
             "attempts": job.get("attempts", 1),
             "resumable": bool(job.get("resumable")),
             "error_code": job.get("error_code"),
@@ -987,7 +1092,29 @@ def get_jobs():
             exposable["has_downloads"] = False
             exposable["available_files"] = []
         result[jid] = exposable
-    return result
+
+    # Waiting songs are numbered so the UI can show "#2 in queue" instead of a
+    # card that looks stuck at 0%.
+    queued_order = sorted(
+        (jid for jid, job in _jobs.items()
+         if isinstance(job, dict) and job.get("status") == "queued"),
+        key=lambda jid: _job_timestamp(_jobs[jid]),
+    )
+    for position, jid in enumerate(queued_order, start=1):
+        result[jid]["queue_position"] = position
+
+    running = sum(
+        1 for job in _jobs.values()
+        if isinstance(job, dict) and job.get("status") == "running"
+    )
+    return {
+        "jobs": result,
+        "slots": {
+            "limit": _job_concurrency(),
+            "running": running,
+            "queued": len(queued_order),
+        },
+    }
 
 @app.delete("/api/jobs/{job_id}")
 def cancel_job(job_id: str):
@@ -1063,7 +1190,7 @@ def get_status(job_id: str):
     j = _jobs[job_id]
     resp = {
         k: v for k, v in j.items()
-        if k not in ("files", "params", "cancel_requested")
+        if k not in ("files", "params", "cancel_requested", "stem_paths")
     }
     if j.get("status") == "complete":
         resp["files"] = list(j["files"].keys())
@@ -1130,12 +1257,23 @@ def download_all(job_id: str):
     zip_filename = f"{safe_base}.zip"
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    zip_path = out_dir / "_bundle.zip"
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        for arcname, p in existing_files:
-            zf.write(p, arcname=arcname)
+    # One ZIP per request: two simultaneous downloads of the same job must not
+    # overwrite each other mid-stream. The file disappears after the response.
+    zip_path = out_dir / f"_bundle_{uuid.uuid4().hex}.zip"
+    try:
+        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for arcname, p in existing_files:
+                zf.write(p, arcname=arcname)
+    except Exception as exc:
+        zip_path.unlink(missing_ok=True)
+        return JSONResponse({"error": f"Could not build the ZIP: {exc}"}, status_code=500)
 
-    return FileResponse(zip_path, media_type="application/zip", filename=zip_filename)
+    return FileResponse(
+        zip_path,
+        media_type="application/zip",
+        filename=zip_filename,
+        background=BackgroundTask(zip_path.unlink, missing_ok=True),
+    )
 
 
 @app.get("/api/lyrics")
@@ -1264,6 +1402,40 @@ def get_alignment_audio(job_id: str):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+def _valid_timed_segments(segments) -> bool:
+    """True when every segment (and word) carries finite numeric start/end.
+
+    A null or NaN timestamp makes generate_ass raise, which used to turn a
+    mistyped editor cell into a permanently un-renderable alignment file.
+    """
+    if not isinstance(segments, list):
+        return False
+
+    def finite(value) -> bool:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return False
+        return math.isfinite(float(value))
+
+    for seg in segments:
+        if not isinstance(seg, dict):
+            return False
+        if not (finite(seg.get("start")) and finite(seg.get("end"))):
+            return False
+        words = seg.get("words")
+        if words is None:
+            continue
+        if not isinstance(words, list):
+            return False
+        for word in words:
+            if not isinstance(word, dict):
+                return False
+            if "start" in word and not finite(word["start"]):
+                return False
+            if "end" in word and not finite(word["end"]):
+                return False
+    return True
+
+
 @app.patch("/alignment/{job_id}")
 async def patch_alignment(job_id: str, request: Request):
     """Save editor-corrected segments. Body: {segments: [...], active_color?, upcoming_color?, sung_color?}."""
@@ -1273,6 +1445,11 @@ async def patch_alignment(job_id: str, request: Request):
     try:
         body     = await request.json()
         segments = body.get("segments", [])
+        if not _valid_timed_segments(segments):
+            return JSONResponse(
+                {"error": "Every segment needs a numeric start and end time."},
+                status_code=400,
+            )
         base     = json.loads(original.read_text(encoding="utf-8"))
         base["segments"] = segments
         # Persist any color overrides sent from the editor
@@ -1301,6 +1478,16 @@ async def start_rerender(job_id: str, background_tasks: BackgroundTasks):
         return JSONResponse({"error": str(e)}, status_code=500)
 
     rerender_id = f"{job_id}_rr"
+    running = _rerender_jobs.get(rerender_id)
+    if running and running.get("status") in ("queued", "running"):
+        # Both runs would share this status record and the same output file.
+        return JSONResponse(
+            {
+                "error": "A re-render for this job is already running.",
+                "rerender_id": rerender_id,
+            },
+            status_code=409,
+        )
     _rerender_jobs[rerender_id] = {
         "status": "queued", "step": "Queued", "progress": 0, "error": None,
     }
@@ -1337,8 +1524,17 @@ async def _run_rerender(rerender_id: str, align_data: dict) -> None:
         return loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
     try:
+        segments = align_data.get("segments")
+        if not _valid_timed_segments(segments):
+            job.update(
+                status="error", step="Failed",
+                error=(
+                    "This alignment has missing or non-numeric start/end times. "
+                    "Fix them in the editor and save again."
+                ),
+            )
+            return
         job.update(status="running", step="Rendering corrected lyrics video…", progress=10)
-        segments       = align_data["segments"]
         out_dir        = Path(align_data["out_dir"])
         bg_path        = align_data["bg_path"]
         audio_path     = align_data["audio_path"]
@@ -1352,12 +1548,16 @@ async def _run_rerender(rerender_id: str, align_data: dict) -> None:
         out_dir.mkdir(parents=True, exist_ok=True)
         output_path = out_dir / "lyrics_video_corrected.mp4"
 
-        job.update(step="Rendering corrected lyrics video…", progress=30)
-        await run(
-            proc.rerender_lyrics_video,
-            bg_path, audio_path, segments, output_path, font_name, font_size,
-            active_color, upcoming_color, sung_color, lyric_style, word_highlight,
-        )
+        # Share the two render slots with normal jobs instead of stacking a
+        # third FFmpeg encode on top of them.
+        job.update(step="Waiting for a free render slot…", progress=20)
+        async with _get_semaphore():
+            job.update(step="Rendering corrected lyrics video…", progress=30)
+            await run(
+                proc.rerender_lyrics_video,
+                bg_path, audio_path, segments, output_path, font_name, font_size,
+                active_color, upcoming_color, sung_color, lyric_style, word_highlight,
+            )
 
         job.update(
             status="complete", step="Done!", progress=100,
