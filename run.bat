@@ -13,6 +13,12 @@ set "PYTHONIOENCODING=utf-8"
 set "USE_TF=0"
 set "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python"
 
+:: Up to three songs render at once. Stem separation and lyric alignment
+:: each keep a slot of their own, so two songs can be in different stages.
+if not defined LYRIC_JOB_CONCURRENCY set "LYRIC_JOB_CONCURRENCY=3"
+if not defined LYRIC_STEM_CONCURRENCY set "LYRIC_STEM_CONCURRENCY=1"
+if not defined LYRIC_ALIGN_CONCURRENCY set "LYRIC_ALIGN_CONCURRENCY=1"
+
 echo =========================================
 echo       Starting LyricForge Server...
 echo =========================================
