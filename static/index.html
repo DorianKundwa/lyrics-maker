@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LyricForge — Lyrics Video Maker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff3c64'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M40 15v23.5a7.5 7.5 0 1 1-4-6.6V22l-15 3.4v18.1a7.5 7.5 0 1 1-4-6.6V20.5L40 15z' fill='%23fff'/%3E%3C/svg%3E">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -19,9 +20,27 @@
     --muted:    #6b7280;
     --success:  #10b981;
     --radius:   16px;
+    --radius-sm: 10px;
+    --ring:     0 0 0 3px rgba(124,58,237,.28);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Focus, selection, scrollbars ── */
+  :focus-visible {
+    outline: 2px solid var(--accent2);
+    outline-offset: 2px;
+  }
+  ::selection { background: rgba(255,60,100,.3); color: #fff; }
+  * { scrollbar-width: thin; scrollbar-color: #2a3143 transparent; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: #232a3a;
+    border: 2px solid var(--bg);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #303a50; }
 
   body {
     font-family: 'DM Sans', sans-serif;
@@ -131,6 +150,26 @@
     margin-bottom: 32px;
     animation: fadeUp .7s .1s ease both;
   }
+  /* Column counts as classes, not inline styles, so the mobile breakpoint can
+     collapse them to a single column. */
+  .meta-row--two   { grid-template-columns: 1fr 1fr; }
+  .meta-row--three { grid-template-columns: 1fr 1fr 1fr; }
+  /* Checkbox row that spans the whole grid on desktop, a single column on phones. */
+  .field-group--wide {
+    grid-column: span 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .field-group--wide input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent2);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .field-group--wide label { margin-bottom: 0; cursor: pointer; }
   .field-group { display: flex; flex-direction: column; gap: 8px; }
   label { font-size: .8rem; color: var(--muted); font-weight: 500; }
   input[type="text"] {
@@ -145,7 +184,10 @@
     transition: border-color .2s;
     width: 100%;
   }
-  input[type="text"]:focus { border-color: var(--accent2); }
+  input[type="text"]:focus {
+    border-color: var(--accent2);
+    box-shadow: var(--ring);
+  }
 
   /* ── Upload grid ── */
   .upload-grid {
@@ -363,73 +405,179 @@
     animation: fadeUp .5s ease both;
   }
 
-  /* ── Batch queue ── */
-  .batch-panel {
-    margin-top: 48px;
+  /* ── Concurrent jobs ── */
+  .live-panel {
+    margin-top: 56px;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: var(--radius);
     padding: 22px 24px 26px;
     animation: fadeUp .5s .1s ease both;
   }
-  /* The pairing summary shares the header row, so drop the divider rule and
-     let the title keep its line instead of wrapping around a long status. */
-  .batch-panel .section-label {
+  .live-panel .live-title { white-space: nowrap; }
+  /* Slot pills and the board's status message share one row below the section
+     label, so the label keeps the divider the numbered sections use. */
+  .live-status-row {
+    display: flex;
     flex-wrap: wrap;
-    row-gap: 4px;
+    align-items: center;
+    gap: 6px 12px;
+    margin: 0 0 14px;
   }
-  .batch-panel .section-label .batch-title {
-    white-space: nowrap;
+  .live-status-row .inline-status { white-space: nowrap; }
+  .live-pills {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
   }
-  .batch-panel .section-label::after { display: none; }
-  .batch-panel .section-label .inline-status {
-    margin-left: auto;
-    white-space: nowrap;
-  }
-  /* The card already fades in; dropping the button's own fadeUp keeps its
-     animation fill-mode from overriding the :disabled opacity. */
-  .batch-panel .btn-process { animation: none; }
-  .batch-hint {
-    font-size: .8rem;
-    color: var(--muted);
-    line-height: 1.6;
-    margin: 0 0 18px;
-  }
-  .batch-hint code {
-    background: rgba(255,255,255,.06);
-    border-radius: 4px;
-    padding: 1px 5px;
-    color: var(--text);
-  }
-  .batch-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: .8rem;
-    margin-bottom: 14px;
-  }
-  .batch-table th {
-    text-align: left;
-    color: var(--muted);
+  .live-pills:empty { display: none; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .72rem;
     font-weight: 600;
-    font-size: .7rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--border);
+    letter-spacing: .02em;
+    line-height: 1.5;
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.05);
+    color: var(--muted);
+    white-space: nowrap;
   }
-  .batch-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid rgba(255,255,255,.05);
-    color: var(--text);
+  .pill.run  { color: #7ee2a8; border-color: rgba(126,226,168,.35); background: rgba(16,185,129,.08); }
+  .pill.wait { color: var(--gold); border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.07); }
+
+  /* One card per render slot. */
+  .slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+  }
+  .slot-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 170px;
+    padding: 14px 16px 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255,255,255,.02);
+    overflow: hidden;
+  }
+  .slot-card.is-busy {
+    border-color: rgba(255,60,100,.32);
+    background: linear-gradient(180deg, rgba(255,60,100,.07), rgba(19,23,34,.55));
+  }
+  .slot-card.is-busy::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .slot-card.is-idle {
+    border-style: dashed;
+    background: transparent;
+  }
+  .slot-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .slot-num {
+    font-family: 'Syne', sans-serif;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .slot-title {
+    font-family: 'Syne', sans-serif;
+    font-size: .95rem;
+    font-weight: 700;
+    line-height: 1.25;
     overflow-wrap: anywhere;
   }
-  .batch-table td:last-child { color: var(--muted); }
-  .batch-problems {
-    margin: 0 0 14px;
-    padding-left: 18px;
+  .slot-artist { font-size: .75rem; color: var(--muted); margin-top: -4px; }
+  .slot-step {
+    font-size: .76rem;
+    color: var(--text);
+    opacity: .82;
+    min-height: 1.2em;
+    overflow-wrap: anywhere;
+  }
+  .slot-idle {
+    margin-top: auto;
+    font-size: .78rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .slot-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+    font-size: .7rem;
+    color: var(--muted);
+  }
+  .slot-meta .btn-sm { margin-left: auto; }
+  .slot-tag {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  /* Waiting queue under the slot board. */
+  .queue-block { margin-top: 18px; }
+  .queue-head {
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .queue-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255,255,255,.02);
+  }
+  .queue-row + .queue-row { margin-top: 8px; }
+  .queue-pos {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
     font-size: .8rem;
-    color: #ff8fa5;
-    line-height: 1.6;
+    color: var(--gold);
+    min-width: 22px;
+  }
+  .queue-main { min-width: 0; flex: 1; }
+  .queue-title {
+    font-size: .82rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .queue-sub {
+    font-size: .7rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* ── Previous jobs panel ── */
@@ -447,18 +595,21 @@
   .job-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: var(--radius);
     padding: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     transition: border-color .2s, transform .2s, box-shadow .2s;
+    /* Long histories (hundreds of cards) only paint what is on screen. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 320px;
   }
   .job-card:hover { border-color: var(--accent2); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,.35); }
   .job-card.finished { border-left: 3px solid var(--success); }
   .job-card.resumable-card { border-left: 3px solid var(--gold); }
-  .job-card.queued,
   .job-card.running { border-left: 3px solid var(--accent); }
+  .job-card.queued  { border-left: 3px solid var(--gold); }
   .job-card.error { border-left: 3px solid #ff3c6460; }
 
   /* Video thumbnail strip */
@@ -565,6 +716,24 @@
   .job-status .dot.resumable { background: var(--gold); }
   .job-status .dot.active { background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
   .job-status .dot.interrupted, .job-status .dot.cancelled { background: var(--gold); }
+  .job-status .dot.queued { background: var(--gold); }
+  /* Status chips: one shape for progress, queue position and end states. */
+  .job-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .7rem;
+    font-weight: 600;
+    line-height: 1.5;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .job-chip--progress { color: var(--text); background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
+  .job-chip--ok      { color: var(--success); background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.25); }
+  .job-chip--warn    { color: var(--gold); background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.25); }
   @keyframes pulse {
     0%,100% { opacity: 1; }
     50% { opacity: .3; }
@@ -572,16 +741,29 @@
 
   /* Progress bar inside running job cards */
   .job-progress-bar {
-    height: 3px;
+    height: 4px;
     background: var(--border);
     border-radius: 99px;
     overflow: hidden;
+    margin-top: 2px;
   }
   .job-progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--accent), var(--accent2));
     border-radius: 99px;
     transition: width .4s ease;
+    box-shadow: 0 0 10px rgba(255,60,100,.45);
+  }
+  /* A rendering card breathes instead of sitting on a flat gradient. */
+  .job-card.running .job-thumb-placeholder,
+  .job-card.queued .job-thumb-placeholder {
+    background: linear-gradient(110deg, #0e1018 30%, #191f30 50%, #0e1018 70%);
+    background-size: 220% 100%;
+    animation: shimmer 2.6s linear infinite;
+  }
+  @keyframes shimmer {
+    from { background-position: 140% 0; }
+    to   { background-position: -60% 0; }
   }
 
   .job-actions {
@@ -718,6 +900,25 @@
     .upload-grid, .upload-grid.three, .meta-row, .results-grid {
       grid-template-columns: 1fr;
     }
+    .wrapper { padding: 28px 18px 64px; }
+    .live-panel { padding: 18px 16px 22px; }
+    .slots-grid { grid-template-columns: 1fr; }
+    .queue-row { flex-wrap: wrap; }
+    .section-label { font-size: .78rem; }
+    .field-group--wide { grid-column: auto; }
+  }
+
+  /* Honour the OS "reduce motion" setting: keep the UI usable, drop the drift. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .job-card:hover { transform: none; }
+    .drop-zone:hover, .drop-zone.dragover { transform: none; }
+    .btn-process:hover { transform: none; }
   }
 
   /* ── Style picker ── */
@@ -1022,7 +1223,7 @@
 
     <!-- Step 4: Configuration -->
     <div class="section-label" style="margin-top:28px"><span class="num">4</span> Configuration</div>
-    <div class="meta-row" style="grid-template-columns: 1fr 1fr; margin-bottom: 16px;">
+    <div class="meta-row meta-row--two" style="margin-bottom: 16px;">
       <div class="field-group">
         <label for="font_name">Font</label>
         <select id="font_name" name="font_name" style="background:var(--card); border:1px solid var(--border); border-radius:10px; color:var(--text); padding:12px 16px; outline:none; font-family:'DM Sans', sans-serif;">
@@ -1061,9 +1262,9 @@
         </select>
         <div style="font-size:12px; opacity:.65; margin-top:6px;">Use Auto-detect for non-English lyrics.</div>
       </div>
-      <div class="field-group" style="grid-column: span 2; display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-        <input type="checkbox" id="word_highlight" name="word_highlight" checked style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;">
-        <label for="word_highlight" style="margin-bottom: 0; cursor: pointer;">Enable Word-by-Word Karaoke Highlighting</label>
+      <div class="field-group field-group--wide">
+        <input type="checkbox" id="word_highlight" name="word_highlight" checked>
+        <label for="word_highlight">Enable Word-by-Word Karaoke Highlighting</label>
       </div>
     </div>
 
@@ -1169,7 +1370,7 @@
 
     <!-- Step 6: Lyric Colors -->
     <div class="section-label" style="margin-top:28px"><span class="num">6</span> Lyric Colors</div>
-    <div class="meta-row" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 16px;">
+    <div class="meta-row meta-row--three" style="margin-bottom: 16px;">
       <div class="field-group">
         <label for="active_color">🟡 Active Word Color</label>
         <input type="color" id="active_color" name="active_color" value="#FFFFFF"
@@ -1204,51 +1405,17 @@
 
   </form>
 
-  <!-- Batch queue -->
-  <div class="batch-panel" id="batchPanel">
+  <!-- Concurrent jobs -->
+  <div class="live-panel" id="livePanel">
     <div class="section-label" style="margin-top:0;">
-      <span class="num">📚</span> <span class="batch-title">Batch queue</span>
-      <span class="inline-status" id="batchStatus"></span>
+      <span class="num">⚡</span> <span class="live-title">Concurrent jobs</span>
     </div>
-    <p class="batch-hint">
-      Pair each audio file with the lyrics file of the same name
-      (<code>song.mp3</code> + <code>song.txt</code>). Every pair becomes its own job in Previous
-      jobs, using the settings above and titled after its filename. Nothing is queued until every
-      song has exactly one lyrics file.
-    </p>
-    <div class="upload-grid three">
-
-      <div class="drop-zone batch-drop" id="dz-batch-audio">
-        <input type="file" id="batch_audio" accept="audio/*,video/*" multiple>
-        <div class="dz-badge">✓</div>
-        <div class="dz-icon">🎧</div>
-        <div class="dz-label">Batch Audio</div>
-        <div class="dz-hint">Select as many songs as you like</div>
-        <div class="dz-filename" id="fn-batch-audio"></div>
-      </div>
-
-      <div class="drop-zone batch-drop" id="dz-batch-lyrics">
-        <input type="file" id="batch_lyrics" accept=".lrc,.txt,.srt" multiple>
-        <div class="dz-badge">✓</div>
-        <div class="dz-icon">📝</div>
-        <div class="dz-label">Batch Lyrics</div>
-        <div class="dz-hint">One file per song, same name as the audio</div>
-        <div class="dz-filename" id="fn-batch-lyrics"></div>
-      </div>
-
-      <div class="drop-zone batch-drop" id="dz-batch-bg">
-        <input type="file" id="batch_background" accept="image/*">
-        <div class="dz-badge">✓</div>
-        <div class="dz-icon">🖼</div>
-        <div class="dz-label">Shared Background <span class="optional-pill">optional</span></div>
-        <div class="dz-hint">Used for every song in the batch</div>
-        <div class="dz-filename" id="fn-batch-bg"></div>
-      </div>
-
+    <div class="live-status-row">
+      <div class="live-pills" id="livePills"></div>
+      <span class="inline-status" id="liveStatus"></span>
     </div>
-
-    <div id="batchReview"></div>
-    <button type="button" class="btn-process" id="btnBatch" disabled>📚 Queue batch</button>
+    <div class="slots-grid" id="slotsGrid"></div>
+    <div id="queueBlock"></div>
   </div>
 
   <!-- Progress -->
@@ -1314,8 +1481,8 @@ function updateAudioPreview(inputId, wrapId, audioId) {
   }
 }
 
-// Batch drop zones accept several files and run their own handlers below.
-document.querySelectorAll('.drop-zone:not(.batch-drop)').forEach(zone => {
+// Every drop zone now feeds the single-song form.
+document.querySelectorAll('.drop-zone').forEach(zone => {
   const input = zone.querySelector('input[type="file"]');
   if (!input) return;
 
@@ -1350,212 +1517,6 @@ document.getElementById('audio').addEventListener('change', () => {
 });
 document.getElementById('outro').addEventListener('change', () => {
   updateAudioPreview('outro', 'prev-wrap-outro', 'audio-preview-outro');
-});
-
-// ── Batch queue ────────────────────────────────────────────────────────────
-const batchAudioInput  = document.getElementById('batch_audio');
-const batchLyricsInput = document.getElementById('batch_lyrics');
-const batchBgInput     = document.getElementById('batch_background');
-const batchReview      = document.getElementById('batchReview');
-const batchStatus      = document.getElementById('batchStatus');
-const btnBatch         = document.getElementById('btnBatch');
-
-// Filename without its extension, keeping the original case for the job title.
-function batchFileTitle(name) {
-  const base = String(name || '').split(/[\\/]/).pop();
-  const dot = base.lastIndexOf('.');
-  return (dot > 0 ? base.slice(0, dot) : base).trim();
-}
-
-function batchStem(name) {
-  return batchFileTitle(name).toLowerCase();
-}
-
-// Mirrors the server rule: pair on the case-insensitive filename stem, and block
-// the whole batch as soon as a song is missing lyrics or matches more than one file.
-function pairBatchFiles(audios, lyricsFiles) {
-  const byStem = new Map();
-  for (const file of lyricsFiles) {
-    const stem = batchStem(file.name);
-    if (!byStem.has(stem)) byStem.set(stem, []);
-    byStem.get(stem).push(file);
-  }
-
-  const pairs = [];
-  const problems = [];
-  const audioStems = new Map();
-
-  for (const audio of audios) {
-    const stem = batchStem(audio.name);
-    if (!audioStems.has(stem)) audioStems.set(stem, []);
-    audioStems.get(stem).push(audio.name);
-
-    const matches = byStem.get(stem) || [];
-    if (matches.length === 1) {
-      pairs.push({ audio, lyrics: matches[0], title: batchFileTitle(audio.name) });
-    } else if (!matches.length) {
-      problems.push(`"${audio.name}" has no lyrics file named "${stem}.txt" or "${stem}.lrc".`);
-    } else {
-      const names = matches.map(f => f.name).join(', ');
-      problems.push(`"${audio.name}" matches more than one lyrics file (${names}); keep one of them.`);
-    }
-  }
-
-  for (const [stem, names] of audioStems) {
-    if (names.length > 1) {
-      problems.push(`${names.length} audio files share the name "${stem}" (${names.join(', ')}); rename them so each song is unique.`);
-    }
-  }
-
-  for (const [stem, files] of byStem) {
-    if (!audioStems.has(stem)) {
-      problems.push(`Lyrics file ${files.map(f => f.name).join(', ')} matches no audio file.`);
-    }
-  }
-
-  return { pairs, problems };
-}
-
-function renderBatchReview() {
-  const audios = Array.from(batchAudioInput.files || []);
-  const lyricsFiles = Array.from(batchLyricsInput.files || []);
-  const { pairs, problems } = pairBatchFiles(audios, lyricsFiles);
-
-  if (!audios.length && !lyricsFiles.length) {
-    batchReview.innerHTML = '';
-    btnBatch.disabled = true;
-    btnBatch.textContent = '📚 Queue batch';
-    // Keep a "queued" or submit-error message, but drop a stale pairing summary.
-    if (batchStatus.dataset.kind !== 'message') {
-      batchStatus.className = 'inline-status';
-      batchStatus.textContent = '';
-    }
-    return;
-  }
-
-  const problemNote = problems.length
-    ? ` · ${problems.length} problem${problems.length === 1 ? '' : 's'}`
-    : '';
-  batchStatus.dataset.kind = 'summary';
-  batchStatus.className = problems.length ? 'inline-status err' : 'inline-status';
-  batchStatus.textContent = audios.length
-    ? `${pairs.length} of ${audios.length} song${audios.length === 1 ? '' : 's'} paired${problemNote}`
-    : `${problems.length} problem${problems.length === 1 ? '' : 's'} with the selected lyrics`;
-
-  const rows = pairs.map(pair => `
-    <tr>
-      <td>${escapeHtml(pair.audio.name)}</td>
-      <td>${escapeHtml(pair.lyrics.name)}</td>
-      <td>${escapeHtml(pair.title)}</td>
-    </tr>`).join('');
-
-  batchReview.innerHTML = `
-    ${rows ? `<table class="batch-table">
-      <thead><tr><th>Audio</th><th>Lyrics</th><th>Job title</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>` : ''}
-    ${problems.length ? `<ul class="batch-problems">${problems.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>` : ''}`;
-
-  btnBatch.disabled = !pairs.length || problems.length > 0;
-  btnBatch.textContent = btnBatch.disabled
-    ? (problems.length ? '⚠ Fix the pairings to queue' : '📚 Queue batch')
-    : `📚 Queue ${pairs.length} song${pairs.length === 1 ? '' : 's'}`;
-}
-
-[batchAudioInput, batchLyricsInput, batchBgInput].forEach(input => {
-  input.addEventListener('change', () => {
-    const zone = input.closest('.batch-drop');
-    const fnEl = zone ? zone.querySelector('.dz-filename') : null;
-    const files = Array.from(input.files || []);
-    if (zone) zone.classList.toggle('filled', files.length > 0);
-    if (fnEl) {
-      fnEl.textContent = files.length > 1 ? `${files.length} files selected` : (files[0] ? files[0].name : '');
-    }
-    if (input === batchBgInput) return; // background does not affect pairing
-    renderBatchReview();
-  });
-});
-
-document.querySelectorAll('.batch-drop').forEach(zone => {
-  const input = zone.querySelector('input[type="file"]');
-  if (!input) return;
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('dragover');
-    const dropped = Array.from(e.dataTransfer.files || []);
-    if (!dropped.length) return;
-    const dt = new DataTransfer();
-    (input.hasAttribute('multiple') ? dropped : dropped.slice(0, 1)).forEach(f => dt.items.add(f));
-    input.files = dt.files;
-    input.dispatchEvent(new Event('change'));
-  });
-});
-
-btnBatch.addEventListener('click', async () => {
-  const audios = Array.from(batchAudioInput.files || []);
-  const lyricsFiles = Array.from(batchLyricsInput.files || []);
-  const { pairs, problems } = pairBatchFiles(audios, lyricsFiles);
-  if (!pairs.length || problems.length) {
-    batchStatus.className = 'inline-status err';
-    batchStatus.textContent = problems[0] || 'Add audio files first.';
-    return;
-  }
-
-  const fd = new FormData();
-  pairs.forEach(pair => fd.append('audios', pair.audio, pair.audio.name));
-  pairs.forEach(pair => fd.append('lyrics_files', pair.lyrics, pair.lyrics.name));
-  if (batchBgInput.files[0]) fd.append('background', batchBgInput.files[0]);
-
-  // Shared render settings are read from the single-song form above.
-  ['artist', 'font_name', 'font_size', 'bg_color', 'stem_engine', 'language',
-   'word_highlight', 'active_color', 'upcoming_color', 'sung_color',
-   'lyric_style', 'outro_text'].forEach(name => {
-    const el = form.elements[name];
-    if (!el) return;
-    if (el.type === 'checkbox') fd.append(name, el.checked ? 'true' : 'false');
-    else fd.append(name, el.value);
-  });
-
-  btnBatch.disabled = true;
-  batchStatus.dataset.kind = 'message';
-  batchStatus.className = 'inline-status';
-  batchStatus.textContent = `Queueing ${pairs.length} song${pairs.length === 1 ? '' : 's'}…`;
-
-  try {
-    const res = await fetch('/api/process/batch', { method: 'POST', body: fd });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.error) {
-      const list = Array.isArray(data.problems) && data.problems.length
-        ? data.problems
-        : [data.error || 'Batch rejected.'];
-      throw new Error(list.join(' '));
-    }
-
-    const message = `✓ Queued ${data.queued} song${data.queued === 1 ? '' : 's'}. Rendering starts automatically.`;
-
-    [batchAudioInput, batchLyricsInput, batchBgInput].forEach(input => { input.value = ''; });
-    document.querySelectorAll('.batch-drop').forEach(zone => {
-      zone.classList.remove('filled');
-      const fnEl = zone.querySelector('.dz-filename');
-      if (fnEl) fnEl.textContent = '';
-    });
-
-    jobsLoaded = false;
-    await refreshJobs();
-    showJobs();
-
-    renderBatchReview();
-    batchStatus.dataset.kind = 'message';
-    batchStatus.className = 'inline-status ok';
-    batchStatus.textContent = message;
-  } catch (err) {
-    renderBatchReview();
-    batchStatus.dataset.kind = 'message';
-    batchStatus.className = 'inline-status err';
-    batchStatus.textContent = err.message || 'Batch could not be queued.';
-  }
 });
 
 // ── Form submit ────────────────────────────────────────────────────────────
@@ -1608,7 +1569,8 @@ function cardStatusLabel(status) {
 
 function dotClass(status, resumable) {
   if (status === 'complete') return 'done';
-  if (['queued', 'running'].includes(status)) return 'active';
+  if (status === 'queued') return 'queued';
+  if (status === 'running') return 'active';
   if (status === 'error') {
     return resumable ? 'resumable' : 'interrupted';
   }
@@ -1690,6 +1652,12 @@ function renderJobs(jobs) {
           <video src="/api/download/${eid}/lyrics_video" onclick="event.stopPropagation()" style="width:100%;height:100%;object-fit:cover;display:block;z-index:2;" preload="none" controls></video>
           ${styleName ? `<div class="job-style-badge">${escapeHtml(styleName)}</div>` : ''}
         </div>`;
+    } else if (status === 'queued') {
+      thumbHtml = `
+        <div class="job-thumb-placeholder">
+          <div class="ph-icon">⏳</div>
+          <div>Waiting for a slot</div>
+        </div>`;
     } else if (running) {
       thumbHtml = `
         <div class="job-thumb-placeholder">
@@ -1708,15 +1676,19 @@ function renderJobs(jobs) {
     const statusDot = `<span class="dot ${dotClass(status, resumable)}"></span>`;
     let statusExtra = '';
     if (finished && job.has_downloads) {
-      statusExtra = `<span style="color:var(--success);font-weight:600;">Downloads ready</span>`;
+      statusExtra = `<span class="job-chip job-chip--ok">Downloads ready</span>`;
     } else if (resumable) {
-      statusExtra = `<span style="color:var(--gold);font-weight:600;">▶ Resumable</span>`;
+      statusExtra = `<span class="job-chip job-chip--warn">▶ Resumable</span>`;
+    } else if (status === 'queued') {
+      statusExtra = job.queue_position
+        ? `<span class="job-chip job-chip--warn">#${Number(job.queue_position)} in queue</span>`
+        : `<span class="job-chip job-chip--warn">Waiting for a slot</span>`;
     } else if (running && typeof job.progress === 'number') {
-      statusExtra = `<span>${job.progress}%</span>`;
+      statusExtra = `<span class="job-chip job-chip--progress">${job.progress}%</span>`;
     }
 
-    // ── Progress bar (running only) ─────────────────────────────────────────
-    const progressBarHtml = running
+    // ── Progress bar (actually rendering only) ──────────────────────────────
+    const progressBarHtml = status === 'running'
       ? `<div class="job-progress-bar"><div class="job-progress-fill" style="width:${job.progress || 0}%"></div></div>`
       : '';
 
@@ -1832,13 +1804,168 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+let lastJobsPayload = { jobs: {}, slots: null };
+
+/** Accept either {jobs, slots} (current API) or a bare jobs map. */
+function applyJobsPayload(data) {
+  const payload = (data && typeof data === 'object') ? data : {};
+  const jobs = (payload.jobs && typeof payload.jobs === 'object') ? payload.jobs : payload;
+  lastJobsPayload = { jobs, slots: payload.slots || null };
+  renderJobs(jobs);
+  renderConcurrent(jobs, payload.slots || null);
+}
+
+/** m:ss for elapsed and waiting labels. */
+function fmtDuration(seconds) {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function boardTitle(job) {
+  return (job.title || '').trim() || (job.artist || '').trim() || 'Untitled';
+}
+
+/** Live board: one card per render slot, then the waiting queue. */
+function renderConcurrent(jobs, slots) {
+  const grid = document.getElementById('slotsGrid');
+  const queueBlock = document.getElementById('queueBlock');
+  const pills = document.getElementById('livePills');
+  if (!grid || !queueBlock || !pills) return;
+
+  const all = Object.entries(jobs || {}).filter(([, j]) => j && typeof j === 'object');
+  const running = all.filter(([, j]) => j.status === 'running');
+  const queued = all
+    .filter(([, j]) => j.status === 'queued')
+    .sort((a, b) => (Number(a[1].queue_position) || 0) - (Number(b[1].queue_position) || 0));
+
+  const limit = Math.max(1, Number(slots && slots.limit) || 3);
+
+  // Real slot ids come from the server; older records without one fill the gaps.
+  const bySlot = new Map();
+  const unassigned = [];
+  running.forEach(entry => {
+    const slot = Number(entry[1].slot);
+    if (slot >= 1 && slot <= limit && !bySlot.has(slot)) bySlot.set(slot, entry);
+    else unassigned.push(entry);
+  });
+  for (let slot = 1; slot <= limit && unassigned.length; slot++) {
+    if (!bySlot.has(slot)) bySlot.set(slot, unassigned.shift());
+  }
+
+  const now = Date.now() / 1000;
+  const cards = [];
+  for (let slot = 1; slot <= limit; slot++) {
+    const entry = bySlot.get(slot);
+    if (!entry) {
+      cards.push(`
+        <article class="slot-card is-idle">
+          <div class="slot-head">
+            <span class="slot-num">Slot ${slot}</span>
+            <span class="job-chip">Idle</span>
+          </div>
+          <div class="slot-idle">Free — the next queued song starts here.</div>
+        </article>`);
+      continue;
+    }
+
+    const [jid, job] = entry;
+    const pct = Math.max(0, Math.min(100, Number(job.progress) || 0));
+    const startedAt = Number(job.started_at) || null;
+    const styleName = STYLE_LABELS[job.lyric_style] || '';
+    const artist = (job.artist || '').trim();
+    const attempts = Number(job.attempts) || 1;
+    const elapsed = startedAt ? fmtDuration(now - startedAt) : '—';
+    cards.push(`
+      <article class="slot-card is-busy">
+        <div class="slot-head">
+          <span class="slot-num">Slot ${slot}</span>
+          <span class="job-chip job-chip--progress">${pct}%</span>
+        </div>
+        <div class="slot-title">${escapeHtml(boardTitle(job))}</div>
+        ${artist ? `<div class="slot-artist">by ${escapeHtml(artist)}</div>` : ''}
+        <div class="slot-step">${escapeHtml(job.step || 'Working…')}</div>
+        <div class="job-progress-bar"><div class="job-progress-fill" style="width:${pct}%"></div></div>
+        <div class="slot-meta">
+          <span data-since="${startedAt || ''}">⏱ ${elapsed}</span>
+          ${styleName ? `<span class="slot-tag">${escapeHtml(styleName)}</span>` : ''}
+          ${attempts > 1 ? `<span class="slot-tag">attempt ${attempts}</span>` : ''}
+          <button type="button" class="btn-sm btn-ghost" data-action="cancel" data-jid="${escapeHtml(jid)}">■ Stop</button>
+        </div>
+      </article>`);
+  }
+  grid.innerHTML = cards.join('');
+
+  pills.innerHTML =
+    `<span class="pill run">▶ ${running.length} of ${limit} slots rendering</span>` +
+    (queued.length ? `<span class="pill wait">⏳ ${queued.length} waiting</span>` : '') +
+    (!running.length && !queued.length ? '<span class="pill">All slots free</span>' : '');
+
+  if (!queued.length) {
+    queueBlock.innerHTML = '';
+    return;
+  }
+  const rows = queued.map(([jid, job], i) => {
+    const position = Number(job.queue_position) || i + 1;
+    const since = Number(job.queued_at) || Number(job.created_at) || null;
+    const artist = (job.artist || '').trim();
+    const detail = [
+      artist ? `by ${artist}` : '',
+      since ? `waiting ${fmtDuration(now - since)}` : '',
+    ].filter(Boolean).join(' · ');
+    return `
+      <div class="queue-row">
+        <span class="queue-pos">#${position}</span>
+        <div class="queue-main">
+          <div class="queue-title">${escapeHtml(boardTitle(job))}</div>
+          <div class="queue-sub">${escapeHtml(detail || 'Waiting for a free slot')}</div>
+        </div>
+        <button type="button" class="btn-sm btn-ghost" data-action="cancel" data-jid="${escapeHtml(jid)}">Remove</button>
+      </div>`;
+  }).join('');
+  queueBlock.innerHTML = `<div class="queue-block">
+    <div class="queue-head">Waiting · ${queued.length}</div>
+    ${rows}
+  </div>`;
+}
+
+/** Keep the elapsed counter moving between the 3 s job polls. */
+function tickSince() {
+  const now = Date.now() / 1000;
+  document.querySelectorAll('#slotsGrid [data-since]').forEach(el => {
+    const startedAt = Number(el.dataset.since);
+    el.textContent = startedAt ? `⏱ ${fmtDuration(now - startedAt)}` : '⏱ —';
+  });
+}
+setInterval(tickSince, 1000);
+
+// Stop a running song or drop a queued one straight from the board.
+document.getElementById('livePanel').addEventListener('click', async (event) => {
+  const btn = event.target.closest('button[data-action="cancel"]');
+  if (!btn) return;
+  const jid = btn.dataset.jid;
+  const status = document.getElementById('liveStatus');
+  btn.disabled = true;
+  status.className = 'inline-status';
+  status.textContent = 'Stopping…';
+  try {
+    const res = await fetch(`/api/jobs/${encodeURIComponent(jid)}`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 409) throw new Error('Could not stop that job.');
+    status.className = 'inline-status ok';
+    status.textContent = res.status === 409 ? 'That job already finished.' : 'Stopped.';
+    await refreshJobs();
+  } catch (err) {
+    btn.disabled = false;
+    status.className = 'inline-status err';
+    status.textContent = err.message || 'Could not stop that job.';
+  }
+});
+
 async function refreshJobs() {
   jobsStatus.textContent = '';
   try {
     const res = await fetch('/api/jobs');
     if (!res.ok) throw new Error('Could not load job history.');
-    const jobs = await res.json();
-    renderJobs(jobs);
+    applyJobsPayload(await res.json());
     jobsLoaded = true;
   } catch (err) {
     jobsStatus.textContent = err.message;
@@ -1922,8 +2049,7 @@ function startJobsAutoPollingIfNeeded(jobs) {
       try {
         const res = await fetch('/api/jobs');
         if (res.ok) {
-          const freshJobs = await res.json();
-          renderJobs(freshJobs);
+          applyJobsPayload(await res.json());
         }
       } catch (e) {}
     }, 3000);
